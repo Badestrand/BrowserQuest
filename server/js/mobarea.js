@@ -1,26 +1,32 @@
+import * as _ from 'underscore'
 
-var Area = require('./area'),
-    _ = require('underscore'),
-    Types = require("../../shared/js/gametypes");
+import Area from './area.js'
+import Mob from './mob.js'
+import Types from '../../shared/js/gametypes.js'
+import * as Utils from './utils.js'
 
-module.exports = MobArea = Area.extend({
-    init: function(id, nb, kind, x, y, width, height, world) {
-        this._super(id, x, y, width, height, world);
+
+
+export default class MobArea extends Area {
+    constructor(id, nb, kind, x, y, width, height, world) {
+        super(id, x, y, width, height, world);
         this.nb = nb;
         this.kind = kind;
         this.respawns = [];
         this.setNumberOfEntities(this.nb);
         
         //this.initRoaming();
-    },
-    
-    spawnMobs: function() {
+    }
+
+
+    spawnMobs() {
         for(var i = 0; i < this.nb; i += 1) {
             this.addToArea(this._createMobInsideArea());
         }
-    },
-    
-    _createMobInsideArea: function() {
+    }
+
+
+    _createMobInsideArea() {
         var k = Types.getKindFromString(this.kind),
             pos = this._getRandomPositionInsideArea(),
             mob = new Mob('1' + this.id + ''+ k + ''+ this.entities.length, k, pos.x, pos.y);
@@ -28,9 +34,10 @@ module.exports = MobArea = Area.extend({
         mob.onMove(this.world.onMobMoveCallback.bind(this.world));
 
         return mob;
-    },
-    
-    respawnMob: function(mob, delay) {
+    }
+
+
+    respawnMob(mob, delay) {
         var self = this;
         
         this.removeFromArea(mob);
@@ -44,9 +51,10 @@ module.exports = MobArea = Area.extend({
             self.addToArea(mob);
             self.world.addMob(mob);
         }, delay);
-    },
+    }
 
-    initRoaming: function(mob) {
+
+    initRoaming(mob) {
         var self = this;
         
         setInterval(function() {
@@ -62,11 +70,12 @@ module.exports = MobArea = Area.extend({
                 }
             });
         }, 500);
-    },
-    
-    createReward: function() {
+    }
+
+
+    createReward() {
         var pos = this._getRandomPositionInsideArea();
         
         return { x: pos.x, y: pos.y, kind: Types.Entities.CHEST };
     }
-});
+}

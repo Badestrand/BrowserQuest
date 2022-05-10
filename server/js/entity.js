@@ -1,48 +1,48 @@
+import * as Messages from './message.js'
+import * as Utils from './utils.js'
 
-var cls = require("./lib/class"),
-    Messages = require('./message'),
-    Utils = require('./utils');
 
-module.exports = Entity = cls.Class.extend({
-    init: function(id, type, kind, x, y) {
+
+
+export default class Entity {
+    constructor(id, type, kind, x, y) {
         this.id = parseInt(id);
         this.type = type;
         this.kind = kind;
         this.x = x;
         this.y = y;
-    },
+    }
     
-    destroy: function() {
-
-    },
+    destroy() {
+    }
     
-    _getBaseState: function() {
+    _getBaseState() {
         return [
             parseInt(this.id),
             this.kind,
             this.x,
             this.y
         ];
-    },
+    }
     
-    getState: function() {
+    getState() {
         return this._getBaseState();
-    },
+    }
     
-    spawn: function() {
+    spawn() {
         return new Messages.Spawn(this);
-    },
+    }
     
-    despawn: function() {
+    despawn() {
         return new Messages.Despawn(this.id);
-    },
+    }
     
-    setPosition: function(x, y) {
+    setPosition(x, y) {
         this.x = x;
         this.y = y;
-    },
+    }
     
-    getPositionNextTo: function(entity) {
+    getPositionNextTo(entity) {
         var pos = null;
         if(entity) {
             pos = {};
@@ -63,4 +63,4 @@ module.exports = Entity = cls.Class.extend({
         }
         return pos;
     }
-});
+}

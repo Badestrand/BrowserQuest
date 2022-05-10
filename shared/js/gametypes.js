@@ -1,5 +1,4 @@
-
-Types = {
+let Types = {
     Messages: {
         HELLO: 0,
         WELCOME: 1,
@@ -181,11 +180,11 @@ Types.rankedArmors = [
 ];
 
 Types.getWeaponRank = function(weaponKind) {
-    return _.indexOf(Types.rankedWeapons, weaponKind);
+    return Types.rankedWeapons.indexOf(weaponKind);
 };
 
 Types.getArmorRank = function(armorKind) {
-    return _.indexOf(Types.rankedArmors, armorKind);
+    return Types.rankedArmors.indexOf(armorKind);
 };
 
 Types.isPlayer = function(kind) {
@@ -290,22 +289,23 @@ Types.getOrientationAsString = function(orientation) {
     }
 };
 
-Types.getRandomItemKind = function(item) {
-    var all = _.union(this.rankedWeapons, this.rankedArmors),
-        forbidden = [Types.Entities.SWORD1, Types.Entities.CLOTHARMOR],
-        itemKinds = _.difference(all, forbidden),
-        i = Math.floor(Math.random() * _.size(itemKinds));
+// Types.getRandomItemKind = function(item) {
+//     var all = this.rankedWeapons.concat(this.rankedArmors)
+//     var forbidden = [Types.Entities.SWORD1, Types.Entities.CLOTHARMOR],
+//     var itemKinds = _.difference(all, forbidden),
+//     var i = Math.floor(Math.random() * itemKinds.length);
     
-    return itemKinds[i];
-};
+//     return itemKinds[i];
+// };
 
 Types.getMessageTypeAsString = function(type) {
     var typeName;
-    _.each(Types.Messages, function(value, name) {
+    for (const name in Types.Messages) {
+        const value = Types.Messages[name]
         if(value === type) {
             typeName = name;
         }
-    });
+    }
     if(!typeName) {
         typeName = "UNKNOWN";
     }
@@ -315,3 +315,6 @@ Types.getMessageTypeAsString = function(type) {
 if(!(typeof exports === 'undefined')) {
     module.exports = Types;
 }
+
+
+export default Types

@@ -1,15 +1,20 @@
+import * as fs from 'fs'
+import * as path from 'path'
+import * as _ from 'underscore'
+import {fileURLToPath} from 'url'
 
-var fs = require('fs'),
-    Metrics = require('./metrics');
+import * as log from './log.js'
+import Metrics from './metrics.js'
+import Player from './player.js'
+import WorldServer from './worldserver.js'
+import * as ws from './ws.js'
+
+
 
 
 function main(config) {
-    var ws = require("./ws"),
-        WorldServer = require("./worldserver"),
-        Log = require('log'),
-        _ = require('underscore'),
-        server = new ws.MultiVersionWebsocketServer(config.port),
-        metrics = config.metrics_enabled ? new Metrics(config) : null;
+    var server = new ws.socketIOServer(config.host, config.port, config.clientUrl),
+        metrics = config.metrics_enabled ? new Metrics(config) : null,
         worlds = [],
         lastTotalPlayers = 0,
         checkPopulationInterval = setInterval(function() {
@@ -24,15 +29,8 @@ function main(config) {
                 });
             }
         }, 1000);
-    
-    switch(config.debug_level) {
-        case "error":
-            log = new Log(Log.ERROR); break;
-        case "debug":
-            log = new Log(Log.DEBUG); break;
-        case "info":
-            log = new Log(Log.INFO); break;
-    };
+
+    log.setLevel(config.debug_level)
     
     log.info("Starting BrowserQuest game server...");
     
@@ -119,8 +117,9 @@ function getConfigFile(path, callback) {
     });
 }
 
-var defaultConfigPath = './server/config.json',
-    customConfigPath = './server/config_local.json';
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+var defaultConfigPath = path.join(__dirname, '../config.json'),
+    customConfigPath = path.join(__dirname, '../config_local.json');
 
 process.argv.forEach(function (val, index, array) {
     if(index === 2) {
@@ -140,3 +139,16 @@ getConfigFile(defaultConfigPath, function(defaultConfig) {
         }
     });
 });
+
+
+
+
+
+process
+    .on('unhandledRejection', (reason, p) => {
+        console.error(reason, 'Unhandled Rejection at Promise', p);
+    })
+    .on('uncaughtException', err => {
+        console.error(err, 'Uncaught Exception thrown');
+        process.exit(1);
+    })

@@ -1,40 +1,33 @@
-
-var Detect = {};
-
-Detect.supportsWebSocket = function() {
-    return window.WebSocket || window.MozWebSocket;
-};
-
-Detect.userAgentContains = function(string) {
+export function userAgentContains(string) {
     return navigator.userAgent.indexOf(string) != -1;
 };
 
-Detect.isTablet = function(screenWidth) {
+export function isTablet(screenWidth) {
     if(screenWidth > 640) {
-        if((Detect.userAgentContains('Android') && Detect.userAgentContains('Firefox'))
-        || Detect.userAgentContains('Mobile')) {
+        if((userAgentContains('Android') && userAgentContains('Firefox'))
+        || userAgentContains('Mobile')) {
             return true;
         }
     }
     return false;
 };
 
-Detect.isWindows = function() {
-    return Detect.userAgentContains('Windows');
+export function isWindows() {
+    return userAgentContains('Windows');
 }
 
-Detect.isChromeOnWindows = function() {
-    return Detect.userAgentContains('Chrome') && Detect.userAgentContains('Windows');
+export function isChromeOnWindows() {
+    return userAgentContains('Chrome') && userAgentContains('Windows');
 };
 
-Detect.canPlayMP3 = function() {
-    return Modernizr.audio.mp3;
+export function canPlayMP3() {
+    return true  //Modernizr.audio.mp3;
 };
 
-Detect.isSafari = function() {
-    return Detect.userAgentContains('Safari') && !Detect.userAgentContains('Chrome');
+export function isSafari() {
+    return userAgentContains('Safari') && !userAgentContains('Chrome');
 };
 
-Detect.isOpera = function() {
-    return Detect.userAgentContains('Opera');
+export function isOpera() {
+    return userAgentContains('Opera');
 };

@@ -1,28 +1,29 @@
+import sanitizer from 'sanitizer'
 
-var Utils = {},
-    sanitizer = require('sanitizer'),
-    Types = require("../../shared/js/gametypes");
+import * as log from './log.js'
+import Types from '../../shared/js/gametypes.js'
 
-module.exports = Utils;
 
-Utils.sanitize = function(string) {
+
+
+export function sanitize(string) {
     // Strip unsafe tags, then escape as html entities.
     return sanitizer.escape(sanitizer.sanitize(string));
 };
 
-Utils.random = function(range) {
+export function random(range) {
     return Math.floor(Math.random() * range);
 };
 
-Utils.randomRange = function(min, max) {
+export function randomRange(min, max) {
     return min + (Math.random() * (max - min));
 };
 
-Utils.randomInt = function(min, max) {
+export function randomInt(min, max) {
     return min + Math.floor(Math.random() * (max - min + 1));
 };
 
-Utils.clamp = function(min, max, value) {
+export function clamp(min, max, value) {
     if(value < min) {
         return min;
     } else if(value > max) {
@@ -32,8 +33,8 @@ Utils.clamp = function(min, max, value) {
     }
 };
 
-Utils.randomOrientation = function() {
-    var o, r = Utils.random(4);
+export function randomOrientation() {
+    var o, r = random(4);
     
     if(r === 0)
         o = Types.Orientations.LEFT;
@@ -47,7 +48,7 @@ Utils.randomOrientation = function() {
     return o;
 };
 
-Utils.Mixin = function(target, source) {
+export function Mixin(target, source) {
   if (source) {
     for (var key, keys = Object.keys(source), l = keys.length; l--; ) {
       key = keys[l];
@@ -60,7 +61,7 @@ Utils.Mixin = function(target, source) {
   return target;
 };
 
-Utils.distanceTo = function(x, y, x2, y2) {
+export function distanceTo(x, y, x2, y2) {
     var distX = Math.abs(x - x2);
     var distY = Math.abs(y - y2);
 

@@ -1,20 +1,20 @@
+import configBuild from '../config/config_build.json'
 
-define(['text!../config/config_build.json'],
-function(build) {
+
+
+export default function config(build) {
     var config = {
-        dev: { host: "localhost", port: 8000, dispatcher: false },
-        build: JSON.parse(build)
+        dev: {
+            host: "localhost",
+            port: 8005,
+            dispatcher: false
+        },
+        build: configBuild
     };
     
     //>>excludeStart("prodHost", pragmas.prodHost);
-    require(['text!../config/config_local.json'], function(local) {
-        try {
-            config.local = JSON.parse(local);
-        } catch(e) {
-            // Exception triggered when config_local.json does not exist. Nothing to do here.
-        }
-    });
+    // config.local = cfg
     //>>excludeEnd("prodHost");
     
     return config;
-});
+}

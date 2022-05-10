@@ -1,5 +1,7 @@
+import * as _ from 'underscore'
+import mapData from '../maps/world_client'
 
-importScripts('../maps/world_client.js', 'lib/underscore.min.js');
+
 
 onmessage = function (event) {
     generateCollisionGrid();
@@ -8,7 +10,7 @@ onmessage = function (event) {
     postMessage(mapData);
 };
 
-function generateCollisionGrid() {
+export function generateCollisionGrid() {
     var tileIndex = 0;
 
     mapData.grid = [];
@@ -32,7 +34,7 @@ function generateCollisionGrid() {
     });
 }
 
-function generatePlateauGrid() {
+export function generatePlateauGrid() {
     var tileIndex = 0;
 
     mapData.plateauGrid = [];
@@ -49,7 +51,7 @@ function generatePlateauGrid() {
     }
 }
 
-function tileIndexToGridPosition(tileNum) {
+export function tileIndexToGridPosition(tileNum) {
     var x = 0,
         y = 0;
 

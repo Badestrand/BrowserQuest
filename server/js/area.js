@@ -1,11 +1,13 @@
+import * as _ from 'underscore'
 
-var cls = require('./lib/class'),
-    _ = require('underscore'),
-    Utils = require('./utils'),
-    Types = require("../../shared/js/gametypes");
+import * as Utils from './utils.js'
+import Mob from './mob.js'
+import Types from '../../shared/js/gametypes.js'
 
-module.exports = Area = cls.Class.extend({
-    init: function(id, x, y, width, height, world) {
+
+
+export default class Area {
+    constructor(id, x, y, width, height, world) {
         this.id = id;
         this.x = x;
         this.y = y;
@@ -14,9 +16,9 @@ module.exports = Area = cls.Class.extend({
         this.world = world;
         this.entities = [];
         this.hasCompletelyRespawned = true;
-    },
+    }
     
-    _getRandomPositionInsideArea: function() {
+    _getRandomPositionInsideArea() {
         var pos = {},
             valid = false;
         
@@ -26,9 +28,9 @@ module.exports = Area = cls.Class.extend({
             valid = this.world.isValidPosition(pos.x, pos.y);
         }
         return pos;
-    },
-    
-    removeFromArea: function(entity) {
+    }
+
+    removeFromArea(entity) {
         var i = _.indexOf(_.pluck(this.entities, 'id'), entity.id);
         this.entities.splice(i, 1);
         
@@ -36,9 +38,9 @@ module.exports = Area = cls.Class.extend({
             this.hasCompletelyRespawned = false;
             this.empty_callback();
         }
-    },
-    
-    addToArea: function(entity) {
+    }
+
+    addToArea(entity) {
         if(entity) {
             this.entities.push(entity);
             entity.area = this;
@@ -50,21 +52,21 @@ module.exports = Area = cls.Class.extend({
         if(this.isFull()) {
             this.hasCompletelyRespawned = true;
         }
-    },
-    
-    setNumberOfEntities: function(nb) {
+    }
+
+    setNumberOfEntities(nb) {
         this.nbEntities = nb;
-    },
+    }
     
-    isEmpty: function() {
+    isEmpty() {
         return !_.any(this.entities, function(entity) { return !entity.isDead });
-    },
-    
-    isFull: function() {
+    }
+
+    isFull() {
         return !this.isEmpty() && (this.nbEntities === _.size(this.entities));
-    },
-    
-    onEmpty: function(callback) {
+    }
+
+    onEmpty(callback) {
         this.empty_callback = callback;
     }
-});
+}

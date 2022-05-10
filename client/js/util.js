@@ -6,11 +6,11 @@ Function.prototype.bind = function (bind) {
     };
 };
 
-var isInt = function(n) {
+export function isInt(n) {
     return (n % 1) === 0;
 };
 
-var TRANSITIONEND = 'transitionend webkitTransitionEnd oTransitionEnd';
+export var TRANSITIONEND = 'transitionend webkitTransitionEnd oTransitionEnd';
 
 // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
 window.requestAnimFrame = (function(){

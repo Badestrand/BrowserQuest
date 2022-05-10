@@ -1,9 +1,12 @@
+import * as _ from 'underscore'
 
-var cls = require("./lib/class"),
-    _ = require("underscore");
+import * as log from './log.js'
 
-module.exports = Metrics = Class.extend({
-    init: function(config) {
+
+
+
+export default class Metrics {
+    constructor(config) {
         var self = this;
         
         this.config = config;
@@ -19,13 +22,15 @@ module.exports = Metrics = Class.extend({
                 self.ready_callback();
             }
         });
-    },
-    
-    ready: function(callback) {
+    }
+
+
+    ready(callback) {
         this.ready_callback = callback;
-    },
-    
-    updatePlayerCounters: function(worlds, updatedCallback) {
+    }
+
+
+    updatePlayerCounters(worlds, updatedCallback) {
         var self = this,
             config = this.config,
             numServers = _.size(config.game_servers),
@@ -56,21 +61,24 @@ module.exports = Metrics = Class.extend({
         } else {
             log.error("Memcached client not connected");
         }
-    },
-    
-    updateWorldDistribution: function(worlds) {
+    }
+
+
+    updateWorldDistribution(worlds) {
         this.client.set('world_distribution_'+this.config.server_name, worlds);
-    },
-    
-    getOpenWorldCount: function(callback) {
+    }
+
+
+    getOpenWorldCount(callback) {
         this.client.get('world_count_'+this.config.server_name, function(error, result) {
             callback(result);
         });
-    },
-    
-    getTotalPlayers: function(callback) {
+    }
+
+
+    getTotalPlayers(callback) {
         this.client.get('total_players', function(error, result) {
             callback(result);
         });
     }
-});
+}

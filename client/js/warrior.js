@@ -1,11 +1,10 @@
+import Types from '../../shared/js/gametypes'
+import Player from './player'
 
-define(['player'], function(Player) {
-    
-    var Warrior = Player.extend({
-        init: function(id, name) {
-            this._super(id, name, Types.Entities.WARRIOR);
-        },
-    });
-    
-    return Warrior;
-});
+
+
+export default class Warrior extends Player {
+    constructor(id, name) {
+        super(id, name, Types.Entities.WARRIOR)
+    }
+}

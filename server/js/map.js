@@ -1,32 +1,33 @@
+import * as fs from 'fs'
+import * as _ from 'underscore'
 
-var cls = require('./lib/class')
-    path = require('path'),
-    fs = require('fs'),
-    _ = require('underscore'),
-    Utils = require('./utils'),
-    Checkpoint = require('./checkpoint');
+import * as log from './log.js'
+import * as Utils from './utils.js'
+import Checkpoint from './checkpoint.js'
 
-module.exports = Map = cls.Class.extend({    
-    init: function(filepath) {
+
+
+
+export default class Map {
+    constructor(filepath) {
     	var self = this;
     
     	this.isLoaded = false;
-    
-    	path.exists(filepath, function(exists) {
-            if(!exists) {
-                log.error(filepath + " doesn't exist.");
-                return;
-            }
-        
+    	if( fs.lstatSync(filepath).isFile() ) {
+     
             fs.readFile(filepath, function(err, file) {
                 var json = JSON.parse(file.toString());
             
                 self.initMap(json);
             });
-        });
-    },
+        }
+        else
+        {
+            log.error(filepath + " doesn't exist.");
+        }
+    }
 
-    initMap: function(map) {
+    initMap(map) {
         this.width = map.width;
         this.height = map.height;
         this.collisions = map.collisions;
@@ -48,13 +49,13 @@ module.exports = Map = cls.Class.extend({
         if(this.ready_func) {
             this.ready_func();
         }
-    },
+    }
 
-    ready: function(f) {
+    ready(f) {
     	this.ready_func = f;
-    },
+    }
 
-    tileIndexToGridPosition: function(tileNum) {
+    tileIndexToGridPosition(tileNum) {
         var x = 0,
             y = 0;
         
@@ -70,13 +71,13 @@ module.exports = Map = cls.Class.extend({
         y = Math.floor(tileNum / this.width);
     
         return { x: x, y: y };
-    },
+    }
 
-    GridPositionToTileIndex: function(x, y) {
+    GridPositionToTileIndex(x, y) {
         return (y * this.width) + x + 1;
-    },
+    }
 
-    generateCollisionGrid: function() {
+    generateCollisionGrid() {
         this.grid = [];
     
         if(this.isLoaded) {
@@ -94,26 +95,26 @@ module.exports = Map = cls.Class.extend({
             }
             //log.info("Collision grid generated.");
         }
-    },
+    }
 
-    isOutOfBounds: function(x, y) {
+    isOutOfBounds(x, y) {
         return x <= 0 || x >= this.width || y <= 0 || y >= this.height;
-    },
+    }
 
-    isColliding: function(x, y) {
+    isColliding(x, y) {
         if(this.isOutOfBounds(x, y)) {
             return false;
         }
         return this.grid[y][x] === 1;
-    },
+    }
     
-    GroupIdToGroupPosition: function(id) {
+    GroupIdToGroupPosition(id) {
         var posArray = id.split('-');
         
         return pos(parseInt(posArray[0]), parseInt(posArray[1]));
-    },
+    }
     
-    forEachGroup: function(callback) {
+    forEachGroup(callback) {
         var width = this.groupWidth,
             height = this.groupHeight;
         
@@ -122,18 +123,18 @@ module.exports = Map = cls.Class.extend({
                 callback(x+'-'+y);
             }
         }
-    },
+    }
     
-    getGroupIdFromPosition: function(x, y) {
+    getGroupIdFromPosition(x, y) {
         var w = this.zoneWidth,
             h = this.zoneHeight,
             gx = Math.floor((x - 1) / w),
             gy = Math.floor((y - 1) / h);
 
         return gx+'-'+gy;
-    },
+    }
     
-    getAdjacentGroupPositions: function(id) {
+    getAdjacentGroupPositions(id) {
         var self = this,
             position = this.GroupIdToGroupPosition(id),
             x = position.x,
@@ -154,17 +155,17 @@ module.exports = Map = cls.Class.extend({
         return _.reject(list, function(pos) { 
             return pos.x < 0 || pos.y < 0 || pos.x >= self.groupWidth || pos.y >= self.groupHeight;
         });
-    },
+    }
     
-    forEachAdjacentGroup: function(groupId, callback) {
+    forEachAdjacentGroup(groupId, callback) {
         if(groupId) {
             _.each(this.getAdjacentGroupPositions(groupId), function(pos) {
                 callback(pos.x+'-'+pos.y);
             });
         }
-    },
+    }
     
-    initConnectedGroups: function(doors) {
+    initConnectedGroups(doors) {
         var self = this;
 
         this.connectedGroups = {};
@@ -179,9 +180,9 @@ module.exports = Map = cls.Class.extend({
                 self.connectedGroups[groupId] = [connectedPosition];
             }
         });
-    },
+    }
     
-    initCheckpoints: function(cpList) {
+    initCheckpoints(cpList) {
         var self = this;
         
         this.checkpoints = {};
@@ -194,25 +195,28 @@ module.exports = Map = cls.Class.extend({
                 self.startingAreas.push(checkpoint);
             }
         });
-    },
+    }
     
-    getCheckpoint: function(id) {
+    getCheckpoint(id) {
         return this.checkpoints[id];
-    },
+    }
     
-    getRandomStartingPosition: function() {
-        var nbAreas = _.size(this.startingAreas);
-            i = Utils.randomInt(0, nbAreas-1);
+    getRandomStartingPosition() {
+        var nbAreas = _.size(this.startingAreas),
+            i = Utils.randomInt(0, nbAreas-1),
             area = this.startingAreas[i];
         
         return area.getRandomPosition();
     }
-});
+}
 
-var pos = function(x, y) {
-    return { x: x, y: y };
-};
 
-var equalPositions = function(pos1, pos2) {
-    return pos1.x === pos2.x && pos2.y === pos2.y;
-};
+
+
+function pos(x, y) {
+    return {x, y}
+}
+
+function equalPositions(pos1, pos2) {
+    return pos1.x===pos2.x && pos2.y===pos2.y
+}
