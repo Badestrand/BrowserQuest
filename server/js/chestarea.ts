@@ -1,7 +1,7 @@
 import * as _ from 'underscore'
 
-import Area from './area.js'
-import Types from '../../shared/js/gametypes.js'
+import Area from './area'
+import * as Types from '../../shared/gametypes'
 
 
 
@@ -24,4 +24,9 @@ export default class ChestArea extends Area {
             return false;
         }
     }
+
+
+    public items: any
+    public chestX: any
+    public chestY: any
 }

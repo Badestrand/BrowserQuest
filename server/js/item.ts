@@ -1,4 +1,4 @@
-import Entity from './entity.js'
+import Entity from './entity'
 
 
 
@@ -43,4 +43,11 @@ export default class Item extends Entity {
     onRespawn(callback) {
         this.respawn_callback = callback;
     }
+
+
+    public isStatic: any
+    public isFromChest: any
+    public respawn_callback: any
+    public despawnTimeout: any
+    public blinkTimeout: any
 }

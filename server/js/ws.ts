@@ -5,8 +5,8 @@ import express from 'express'
 import * as socket from 'socket.io'
 import xhttp from 'http'
 
-import * as log from './log.js'
-import * as Utils from './utils.js'
+import * as log from './log'
+import * as Utils from './utils'
 
 
 
@@ -58,6 +58,13 @@ class Server {
     connectionsCount() {
         return Object.keys(this._connections).length
     }
+
+
+    public port: any
+    public _connections: any
+    public _counter: any
+    public connection_callback: any
+    public error_callback: any
 }
 
 
@@ -94,6 +101,13 @@ class Connection {
         log.info("Closing connection to "+this._connection.remoteAddress+". Error: "+logError);
         this._connection.close();
     }
+
+
+    public id: any
+    public _connection: any
+    public _server: any
+    public close_callback: any
+    public listen_callback: any
 }
 
 
@@ -111,7 +125,7 @@ class Connection {
 
 export class socketIOServer extends Server {
     constructor(host, port, clientUrl) {
-        super()
+        super(undefined)
         const self = this;
         self.host = host;
         self.port = port;
@@ -153,12 +167,17 @@ export class socketIOServer extends Server {
     }
     
     broadcast(message) {
-        self.io.emit("message", message)
+        this.io.emit("message", message)
     }
 
     onRequestStatus(status_callback) {
         this.status_callback = status_callback;
     }
+
+
+    public host: any
+    public io: any
+    public status_callback: any
 }
 
 
@@ -183,7 +202,7 @@ export class socketIOConnection extends Connection {
             if(self.close_callback) {
                 self.close_callback();
             }
-            delete self._server.removeConnection(self.id);
+            self._server.removeConnection(self.id);
         })
     }
     

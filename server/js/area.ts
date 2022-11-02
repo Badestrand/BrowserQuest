@@ -1,8 +1,8 @@
 import * as _ from 'underscore'
 
-import * as Utils from './utils.js'
-import Mob from './mob.js'
-import Types from '../../shared/js/gametypes.js'
+import * as Utils from './utils'
+import Mob from './mob'
+import * as Types from '../../shared/gametypes'
 
 
 
@@ -19,7 +19,7 @@ export default class Area {
     }
     
     _getRandomPositionInsideArea() {
-        var pos = {},
+        var pos: any = {},
             valid = false;
         
         while(!valid) {
@@ -69,4 +69,17 @@ export default class Area {
     onEmpty(callback) {
         this.empty_callback = callback;
     }
+
+
+    
+    public id: any
+    public x: any
+    public y: any
+    public width: any
+    public height: any
+    public world: any
+    public entities: any
+    public hasCompletelyRespawned: any
+    public empty_callback: any
+    public nbEntities: any
 }

@@ -4,7 +4,7 @@ import log from './log'
 import Entity from './entity'
 import Transition from './transition'
 import Timer from './timer'
-import Types from '../../shared/js/gametypes'
+import * as Types from '../../shared/gametypes'
 import {clone} from './util'
 
 

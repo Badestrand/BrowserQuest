@@ -1,13 +1,13 @@
 import * as _ from 'underscore'
 
-import * as log from './log.js'
-import * as Utils from './utils.js'
-import * as Messages from './message.js'
-import Properties from './properties.js'
-import ChestArea from './chestarea.js'
-import Character from './Character.js'
-import MobArea from './mobarea.js'
-import Types from '../../shared/js/gametypes.js'
+import * as log from './log'
+import * as Utils from './utils'
+import * as Messages from './message'
+import Properties from './properties'
+import ChestArea from './chestarea'
+import Character from './Character'
+import MobArea from './mobarea'
+import * as Types from '../../shared/gametypes'
 
 
 
@@ -183,4 +183,17 @@ export default class Mob extends Character {
     distanceToSpawningPoint(x, y) {
         return Utils.distanceTo(x, y, this.spawningX, this.spawningY);
     }
+
+
+    public spawningX: any
+    public spawningY: any
+    public armorLevel: any
+    public weaponLevel: any
+    public hatelist: any
+    public respawnTimeout: any
+    public returnTimeout: any
+    public isDead: any
+    public area: any
+    public respawn_callback: any
+    public move_callback: any
 }

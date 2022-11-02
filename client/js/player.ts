@@ -4,7 +4,7 @@ import log from './log'
 import Character from  './character'
 import * as Exceptions from  './exceptions'
 import {clone} from './util'
-import Types from '../../shared/js/gametypes'
+import * as Types from '../../shared/gametypes'
 import {AllHeroClasses} from '../../shared/game'
 
 

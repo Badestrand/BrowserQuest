@@ -1,7 +1,7 @@
 import * as _ from 'underscore'
 
-import * as log from './log.js'
-import Types from '../../shared/js/gametypes.js'
+import * as log from './log'
+import * as Types from '../../shared/gametypes'
 
 
 
@@ -54,6 +54,8 @@ class FormatChecker {
             return false;
         }
     }
+
+    public formats: any
 }
 
 const checker = new FormatChecker

@@ -5,7 +5,7 @@ import * as NPCs from './npcs'
 import Warrior from './warrior'
 import Chest from './chest'
 import Mob from './mob'
-import Types from '../../shared/js/gametypes'
+import * as Types from '../../shared/gametypes'
 
 
 var EntityFactory = {};

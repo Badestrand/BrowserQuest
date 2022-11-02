@@ -1,7 +1,7 @@
 import * as _ from 'underscore'
 
 import log from './log'
-import Types from '../../shared/js/gametypes'
+import * as Types from '../../shared/gametypes'
 import Camera from './camera'
 import Item from './item'
 import Character from './character'

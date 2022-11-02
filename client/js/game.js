@@ -23,7 +23,7 @@ import Chest from './chest'
 import * as Mobs from './mobs'
 import * as Exceptions from  './exceptions'
 import config from './config'
-import Types from '../../shared/js/gametypes'
+import * as Types from '../../shared/gametypes'
 
 
 

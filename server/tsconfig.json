@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"sourceMap": true,
+		"target": "es6",
+		"module": "commonjs",
+		"esModuleInterop": true,
+		"baseUrl": "."
+	},
+	"files": [
+		"../shared/types.d.ts"
+	],
+	"include": [
+		"**/*.ts",
+		"../shared"
+	],
+	"exclude": [
+		"node_modules"
+	]
+}

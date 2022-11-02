@@ -3,11 +3,11 @@ import * as path from 'path'
 import * as _ from 'underscore'
 import {fileURLToPath} from 'url'
 
-import * as log from './log.js'
-import Metrics from './metrics.js'
-import Player from './player.js'
-import WorldServer from './worldserver.js'
-import * as ws from './ws.js'
+import * as log from './log'
+import Metrics from './metrics'
+import Player from './player'
+import WorldServer from './worldserver'
+import * as ws from './ws'
 
 
 
@@ -117,9 +117,8 @@ function getConfigFile(path, callback) {
     });
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-var defaultConfigPath = path.join(__dirname, '../config.json'),
-    customConfigPath = path.join(__dirname, '../config_local.json');
+var defaultConfigPath = './config.json'
+var customConfigPath = './config_local.json'
 
 process.argv.forEach(function (val, index, array) {
     if(index === 2) {

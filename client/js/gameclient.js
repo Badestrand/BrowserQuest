@@ -6,7 +6,7 @@ import log from './log'
 import Player from './player'
 import EntityFactory from './entityfactory'
 import BISON from './lib/bison'
-import Types from '../../shared/js/gametypes'
+import * as Types from '../../shared/gametypes'
 
 
 

@@ -1,9 +1,9 @@
 import * as _ from 'underscore'
 
-import Area from './area.js'
-import Mob from './mob.js'
-import Types from '../../shared/js/gametypes.js'
-import * as Utils from './utils.js'
+import Area from './area'
+import Mob from './mob'
+import * as Types from '../../shared/gametypes'
+import * as Utils from './utils'
 
 
 
@@ -78,4 +78,9 @@ export default class MobArea extends Area {
         
         return { x: pos.x, y: pos.y, kind: Types.Entities.CHEST };
     }
+
+
+    public nb: any
+    public kind: any
+    public respawns: any 
 }

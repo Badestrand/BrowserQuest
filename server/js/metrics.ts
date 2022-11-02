@@ -1,6 +1,6 @@
 import * as _ from 'underscore'
 
-import * as log from './log.js'
+import * as log from './log'
 
 
 
@@ -81,4 +81,10 @@ export default class Metrics {
             callback(result);
         });
     }
+
+
+    public isReady: boolean
+    public client: any
+    public config: any
+    public ready_callback: any
 }

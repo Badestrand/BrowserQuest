@@ -1,7 +1,7 @@
 import sanitizer from 'sanitizer'
 
-import * as log from './log.js'
-import Types from '../../shared/js/gametypes.js'
+import * as log from './log'
+import * as Types from '../../shared/gametypes'
 
 
 

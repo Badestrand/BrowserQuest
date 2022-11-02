@@ -3,7 +3,7 @@ import * as _ from 'underscore'
 
 import log from './log'
 import Area from './area'
-import Types from '../../shared/js/gametypes'
+import * as Types from '../../shared/gametypes'
 import {isInt} from './util'
 
 
@@ -36,7 +36,7 @@ export default class Map {
 		
 		// if(useWorker) {
 		// 	log.info("Loading map with web worker.");
-		// 	var worker = new Worker('js/mapworker.js');
+		// 	var worker = new Worker('js/mapworker');
 		// 	worker.postMessage(1);
 		
 		// 	worker.onmessage = function(event) {

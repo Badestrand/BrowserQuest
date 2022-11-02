@@ -1,8 +1,8 @@
 import * as _ from 'underscore'
 
-import * as log from './log.js'
-import * as Utils from './utils.js'
-import Types from '../../shared/js/gametypes.js'
+import * as log from './log'
+import * as Utils from './utils'
+import * as Types from '../../shared/gametypes'
 
 
 
@@ -21,6 +21,8 @@ export class Spawn extends Message {
 		var spawn = [Types.Messages.SPAWN];
 		return spawn.concat(this.entity.getState());
 	}
+
+	public entity: any
 }
 
 
@@ -33,6 +35,8 @@ export class Despawn extends Message {
 	serialize() {
 		return [Types.Messages.DESPAWN, this.entityId];
 	}
+
+	public entityId: any
 }
 
 
@@ -48,6 +52,8 @@ export class Move extends Message {
 				this.entity.x,
 				this.entity.y];
 	}
+
+	public entity: any
 }
 
 
@@ -63,6 +69,9 @@ export class LootMove extends Message {
 				this.entity.id,
 				this.item.id];
 	}
+
+	public entity: any
+	public item: any
 }
 
 
@@ -78,6 +87,9 @@ export class Attack extends Message {
 				this.attackerId,
 				this.targetId];
 	}
+
+	public attackerId: any
+	public targetId: any
 }
 
 
@@ -96,6 +108,9 @@ export class Health extends Message {
 		}
 		return health;
 	}
+
+	public points: any
+	public isRegen: any
 }
 
 
@@ -109,6 +124,8 @@ export class HitPoints extends Message {
 		return [Types.Messages.HP,
 				this.maxHitpoints];
 	}
+
+	public maxHitpoints: any
 }
 
 
@@ -124,6 +141,9 @@ export class EquipItem extends Message {
 				this.playerId,
 				this.itemKind];
 	}
+
+	public playerId: any
+	public itemKind: any
 }
 
 
@@ -143,6 +163,9 @@ export class Drop extends Message {
 
 		return drop;
 	}
+
+	public mob: any
+	public item: any
 }
 
 
@@ -158,6 +181,9 @@ export class Chat extends Message {
 				this.playerId,
 				this.message];
 	}
+
+	public playerId: any
+	public message: any
 }
 
 
@@ -173,6 +199,8 @@ export class Teleport extends Message {
 				this.entity.x,
 				this.entity.y];
 	}
+
+	public entity: any
 }
 
 
@@ -188,6 +216,9 @@ export class Damage extends Message {
 				this.entity.id,
 				this.points];
 	}
+
+	public entity: any
+	public points: any
 }
 
 
@@ -203,6 +234,9 @@ export class Population extends Message {
 				this.world,
 				this.total];
 	}
+
+	public world: any
+	public total: any
 }
 
 
@@ -216,6 +250,9 @@ export class Kill extends Message {
 	serialize() {
 		return [Types.Messages.KILL, this.mob.kind, this.exp];
 	}
+
+	public mob: any
+	public exp: any
 }
 
 
@@ -231,6 +268,8 @@ export class List extends Message {
 		list.unshift(Types.Messages.LIST);
 		return list;
 	}
+
+	public ids: any
 }
 
 
@@ -244,6 +283,8 @@ export class Destroy extends Message {
 		return [Types.Messages.DESTROY,
 				this.entity.id];
 	}
+
+	public entity: any
 }
 
 
@@ -257,4 +298,6 @@ export class Blink extends Message {
 		return [Types.Messages.BLINK,
 				this.item.id];
 	}
+
+	public item: any
 }

@@ -1,25 +1,25 @@
 import * as _ from 'underscore'
 
-import * as log from './log.js'
-import * as Messages from './message.js'
-import * as Utils from './utils.js'
-import Properties from './properties.js'
-import Character from './character.js'
-import * as Formulas from './formulas.js'
-import check from './format.js'
-import Types from '../../shared/js/gametypes.js'
+import * as log from './log'
+import * as Messages from './message'
+import * as Utils from './utils'
+import Properties from './properties'
+import Character from './character'
+import Chest from './chest'
+import * as Formulas from './formulas'
+import check from './format'
+import * as Types from '../../shared/gametypes'
 
 
 
 
 export default class Player extends Character {
     constructor(connection, worldServer) {
-        super(connection.id, "player", Types.Entities.WARRIOR, 0, 0, "")
+        super(connection.id, "player", Types.Entities.WARRIOR, 0, 0)
         var self = this;
         
         this.server = worldServer;
         this.connection = connection;
-
 
         this.hasEnteredGame = false;
         this.isDead = false;
@@ -273,16 +273,16 @@ export default class Player extends Character {
     }
 
 
-    broadcast(message, ignoreSelf) {
+    broadcast(message, ignoreSelf=true) {
         if(this.broadcast_callback) {
-            this.broadcast_callback(message, ignoreSelf === undefined ? true : ignoreSelf);
+            this.broadcast_callback(message, ignoreSelf);
         }
     }
 
 
-    broadcastToZone(message, ignoreSelf) {
+    broadcastToZone(message, ignoreSelf=true) {
         if(this.broadcastzone_callback) {
-            this.broadcastzone_callback(message, ignoreSelf === undefined ? true : ignoreSelf);
+            this.broadcastzone_callback(message, ignoreSelf);
         }
     }
 
@@ -304,11 +304,6 @@ export default class Player extends Character {
 
     onZone(callback) {
         this.zone_callback = callback;
-    }
-
-
-    onOrient(callback) {
-        this.orient_callback = callback;
     }
 
 
@@ -410,4 +405,27 @@ export default class Player extends Character {
         this.connection.sendUTF8("timeout");
         this.connection.close("Player was idle for too long");
     }
+
+
+    public lootmove_callback: any
+    public move_callback: any
+    public zone_callback: any
+    public exit_callback: any
+    public broadcast_callback: any
+    public broadcastzone_callback: any
+    public message_callback: any
+    public requestpos_callback: any
+    public firepotionTimeout: any
+    public name: any
+    public armor: any
+    public weapon: any
+    public server: any
+    public connection: any
+    public hasEnteredGame: any
+    public isDead: any
+    public haters: any
+    public lastCheckpoint: any
+    public disconnectTimeout: any
+    public weaponLevel: any
+    public armorLevel: any
 }

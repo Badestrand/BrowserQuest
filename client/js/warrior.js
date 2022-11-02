@@ -1,4 +1,4 @@
-import Types from '../../shared/js/gametypes'
+import * as Types from '../../shared/gametypes'
 import Player from './player'
 
 

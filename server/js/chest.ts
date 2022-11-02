@@ -1,6 +1,8 @@
-import * as Utils from './utils.js'
-import Item from './item.js'
-import Types from '../../shared/js/gametypes.js'
+import * as _ from 'underscore'
+
+import * as Utils from './utils'
+import Item from './item'
+import * as Types from '../../shared/gametypes'
 
 
 
@@ -23,4 +25,7 @@ export default class Chest extends Item {
         }
         return item;
     }
+
+
+    public items: any
 }

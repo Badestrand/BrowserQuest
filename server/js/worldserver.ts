@@ -1,20 +1,20 @@
 import * as _ from 'underscore'
 
-import * as log from './log.js'
-import Entity from './entity.js'
-import Character from './character.js'
-import Mob from './mob.js'
-import Map from './map.js'
-import Npc from './npc.js'
-import Player from './player.js'
-import Item from './item.js'
-import MobArea from './mobarea.js'
-import ChestArea from './chestarea.js'
-import Chest from './chest.js'
-import * as Messages from './message.js'
-import Properties from "./properties.js"
-import * as Utils from "./utils.js"
-import Types from "../../shared/js/gametypes.js"
+import * as log from './log'
+import Entity from './entity'
+import Character from './character'
+import Mob from './mob'
+import Map from './map'
+import Npc from './npc'
+import Player from './player'
+import Item from './item'
+import MobArea from './mobarea'
+import ChestArea from './chestarea'
+import Chest from './chest'
+import * as Messages from './message'
+import Properties from './properties'
+import * as Utils from './utils'
+import * as Types from '../../shared/gametypes'
 
 
 
@@ -69,7 +69,7 @@ export default class World {
             // Number of players in this world
             // and in the overall server world
             //self.pushToPlayer(player, new Messages.Population(self.playerCount, self.server.connectionsCount()));
-            self.updatePopulation();
+            self.updatePopulation(undefined);
 
             self.pushRelevantEntityListTo(player);
     
@@ -269,7 +269,7 @@ export default class World {
         }
     }
     
-    pushToGroup(groupId, message, ignoredPlayer) {
+    pushToGroup(groupId, message, ignoredPlayer=undefined) {
         var self = this,
             group = this.groups[groupId];
         
@@ -284,7 +284,7 @@ export default class World {
         }
     }
     
-    pushToAdjacentGroups(groupId, message, ignoredPlayer) {
+    pushToAdjacentGroups(groupId, message, ignoredPlayer=undefined) {
         var self = this;
         self.map.forEachAdjacentGroup(groupId, function(id) {
             self.pushToGroup(id, message, ignoredPlayer);
@@ -297,7 +297,7 @@ export default class World {
         // Push this message to all groups which are not going to be updated anymore,
         // since the player left them.
         _.each(player.recentlyLeftGroups, function(id) {
-            self.pushToGroup(id, message);
+            self.pushToGroup(id, message, undefined);
         });
         player.recentlyLeftGroups = [];
     }
@@ -474,7 +474,7 @@ export default class World {
             player.addHater(mob);
             
             if(mob.hitPoints > 0) { // only choose a target if still alive
-                this.chooseMobTarget(mob);
+                this.chooseMobTarget(mob, undefined);
             }
         }
     }
@@ -855,6 +855,35 @@ export default class World {
         totalPlayers = totalPlayers ? totalPlayers : this.server.connectionsCount();
         
         log.info("Updating population: " + this.playerCount + " " + totalPlayers)
-        this.pushBroadcast(new Messages.Population(this.playerCount, totalPlayers));
+        this.pushBroadcast(new Messages.Population(this.playerCount, totalPlayers), undefined);
     }
+
+
+    public id: any
+    public maxPlayers: any
+    public server: any
+    public ups: any
+    public map: any
+    public entities: any
+    public players: any
+    public mobs: any
+    public attackers: any
+    public items: any
+    public equipping: any
+    public hurt: any
+    public npcs: any
+    public mobAreas: any
+    public chestAreas: any
+    public groups: any
+    public outgoingQueues: any
+    public itemCount: any
+    public playerCount: any
+    public zoneGroupsReady: any
+    public removed_callback: any
+    public added_callback: any
+    public regen_callback: any
+    public init_callback: any
+    public connect_callback: any
+    public enter_callback: any
+    public attack_callback: any
 }

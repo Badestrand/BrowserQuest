@@ -1,8 +1,8 @@
-import * as log from './log.js'
-import * as Messages from './message.js'
-import * as Utils from './utils.js'
-import Entity from './entity.js'
-import Types from '../../shared/js/gametypes.js'
+import * as log from './log'
+import * as Messages from './message'
+import * as Utils from './utils'
+import Entity from './entity'
+import * as Types from '../../shared/gametypes'
 
 
 
@@ -93,4 +93,11 @@ export default class Character extends Entity {
             callback(this.attackers[id]);
         }
     }
+
+
+    public orientation: any
+    public attackers: any
+    public target: any
+    public hitPoints: any
+    public maxHitpoints: any
 }

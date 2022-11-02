@@ -1,5 +1,5 @@
-import * as Messages from './message.js'
-import * as Utils from './utils.js'
+import * as Messages from './message'
+import * as Utils from './utils'
 
 
 
@@ -63,4 +63,11 @@ export default class Entity {
         }
         return pos;
     }
+
+
+    public id: any
+    public type: any
+    public kind: any
+    public x: any
+    public y: any
 }

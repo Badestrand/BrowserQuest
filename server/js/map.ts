@@ -1,9 +1,9 @@
 import * as fs from 'fs'
 import * as _ from 'underscore'
 
-import * as log from './log.js'
-import * as Utils from './utils.js'
-import Checkpoint from './checkpoint.js'
+import * as log from './log'
+import * as Utils from './utils'
+import Checkpoint from './checkpoint'
 
 
 
@@ -208,6 +208,25 @@ export default class Map {
         
         return area.getRandomPosition();
     }
+
+
+    public width: any
+    public height: any
+    public collisions: any
+    public mobAreas: any
+    public chestAreas: any
+    public staticChests: any
+    public staticEntities: any
+    public isLoaded: any
+    public zoneWidth: any
+    public zoneHeight: any
+    public groupWidth: any
+    public groupHeight: any
+    public ready_func: any
+    public checkpoints: any
+    public grid: any
+    public connectedGroups: any
+    public startingAreas: any
 }
 
 

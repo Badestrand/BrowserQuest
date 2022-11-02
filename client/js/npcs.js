@@ -1,5 +1,5 @@
 import Npc from './npc'
-import Types from '../../shared/js/gametypes'
+import * as Types from '../../shared/gametypes'
 
 
 
