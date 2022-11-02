@@ -138,7 +138,7 @@ export default class World {
         this.onRegenTick(function() {
             self.forEachCharacter(function(character) {
                 if(!character.hasFullHealth()) {
-                    character.regenHealthBy(Math.floor(character.maxHitPoints / 25));
+                    character.regenHealthBy(Math.floor(character.maxHitpoints / 25));
             
                     if(character.type === 'player') {
                         self.pushToPlayer(character, character.regen());
@@ -296,7 +296,7 @@ export default class World {
         
         // Push this message to all groups which are not going to be updated anymore,
         // since the player left them.
-        _.each(player.recentlyLeftGroups, function(id) {
+        _.each(player.recentlyLeftGroups, function(id) {
             self.pushToGroup(id, message);
         });
         player.recentlyLeftGroups = [];
@@ -310,7 +310,7 @@ export default class World {
         }
     }
     
-    processQueues() {
+    processQueues() {
         var self = this,
             connection;
 
@@ -517,7 +517,7 @@ export default class World {
     }
     
     broadcastAttacker(character) {
-        if(character) {
+        if(character) {
             this.pushToAdjacentGroups(character.group, character.attack(), character.id);
         }
         if(this.attack_callback) {
@@ -543,8 +543,7 @@ export default class World {
             if(entity.type === "mob") {
                 var mob = entity,
                     item = this.getDroppedItem(mob);
-                
-                this.pushToPlayer(attacker, new Messages.Kill(mob));
+                this.pushToPlayer(attacker, new Messages.Kill(mob, Properties.getMobExperience(mob.kind)));
                 this.pushToAdjacentGroups(mob.group, mob.despawn()); // Despawn must be enqueued before the item drop
                 if(item) {
                     this.pushToAdjacentGroups(mob.group, mob.drop(item));

@@ -1,0 +1,189 @@
+
+#achievements {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	z-index: 1000;
+	opacity: 0;
+	pointer-events: none;
+	transition: 0.4s top ease, 0.4s opacity linear;
+	/* webpackIgnore: true */
+	background-image: url('../img/2/achievements.png');
+
+	.coin,
+	#coinsparks {
+		/* webpackIgnore: true */
+		background-image: url('../img/2/achievements.png');
+	}
+
+	.previous,
+	.next {
+		display: inline-block;
+		height: 44px;
+		width: 68px;
+		/* webpackIgnore: true */
+		background-image: url('../img/2/achievements.png');
+	}
+	.page1 .previous {
+		background-position:0px -564px;
+	}
+	.page5 .next {
+		background-position:-66px -564px;
+	}
+	.previous {
+		background-position:-134px -564px;
+	}
+	.previous:active {
+		background-position:-268px -564px;
+	}
+	.next {
+		margin-left:-10px;background-position:-200px -564px;
+	}
+	.next:active {
+		background-position:-334px -564px;
+	}
+
+	.page1 .previous:hover, .page1 .previous:active {background-position:0px -564px;}
+	.page5 .next:hover, .page5 .next:active {background-position:-66px -564px}
+
+	nav::selection {
+		background: transparent;
+		text-decoration: none;
+		color: transparent;
+	}
+
+	.achievement-name {
+		color: #fff;
+	}
+	.achievement-description {
+		float: right;
+		width: 65%;
+	}
+	li {
+		clear: both;
+		position: relative;
+		/* webpackIgnore: true */
+		background: url('../img/2/achievements.png');
+
+		.coin,
+		.achievement-name {
+			float: left;
+		}
+		.coin {
+			opacity: 0;
+		}
+		&.unlocked .achievement-name {
+			color: #fce045;
+		}
+		&.unlocked .coin {
+			opacity: 1;
+		}
+	}
+
+	&.active {
+		opacity: 1;
+		pointer-events: auto;
+	}
+}
+
+
+#achievement-notification {
+	position: absolute;
+	z-index: 8;
+	bottom: 0;
+	left: 50%;
+	text-align: center;
+	pointer-events: none;
+	transition: 0.3s height ease;
+	/* webpackIgnore: true */
+	background-image: url('../img/2/achievements.png');
+
+	&.active {
+		.name, .title {
+			opacity: 1;
+		}
+	}
+	.name, .title {
+		opacity: 0;
+		transition: 0.3s opacity linear;
+	}
+}
+
+#achievement-info {
+	overflow: hidden;
+	height: 100%;
+}
+
+
+
+
+
+
+
+
+
+
+
+#achievements-wrapper {overflow:hidden;}
+#achievements ul:first-child {margin-left:0;}
+#lists {-moz-transition:0.5s left ease-in-out;-webkit-transition:0.5s left ease-in-out;-o-transition:0.5s left ease-in-out;-ms-transition:0.5s left ease-in-out;transition:0.5s left ease-in-out;position:relative;}
+#achievements-count {float:right;color:#fff;}
+#achievements-count div {display:inline-block;}
+#achievement-notification .coin {-moz-transition:0.2s opacity linear;-webkit-transition:0.2s opacity linear;-o-transition:0.2s opacity linear;-ms-transition:0.2s opacity linear;transition:0.2s opacity linear;}
+
+
+
+
+.coin {
+	width: 48px;
+	height: 52px;
+	/* webpackIgnore: true */
+	background-image: url(../img/2/achievements.png);
+}
+.achievement1 .coin {background-position:0 -444px;}
+.achievement2 .coin {background-position:-48px -444px;}
+.achievement3 .coin {background-position:-96px -444px;}
+.achievement4 .coin {background-position:-144px -444px;}
+.achievement5 .coin {background-position:-192px -444px;}
+.achievement6 .coin {background-position:-240px -444px;}
+.achievement7 .coin {background-position:-288px -444px;}
+.achievement8 .coin {background-position:-336px -444px;}
+.achievement9 .coin {background-position:-384px -444px;}
+.achievement10 .coin {background-position:-432px -444px;}
+.achievement11 .coin {background-position:-480px -444px;}
+.achievement12 .coin {background-position:-528px -444px;}
+.achievement13 .coin {background-position:-576px -444px;}
+.achievement14 .coin {background-position:-624px -444px;}
+.achievement15 .coin {background-position:-672px -444px;}
+.achievement16 .coin {background-position:-720px -444px;}
+.achievement17 .coin {background-position:-768px -444px;}
+.achievement18 .coin {background-position:-432px -548px;}
+.achievement19 .coin {background-position:-480px -548px;}
+.achievement20 .coin {background-position:-528px -548px;}
+
+#achievements-wrapper {height:258px;width:744px;margin:40px 0 20px 40px;}
+#achievements ul {float:left;margin-left:40px;}
+#achievements nav {height:44px;width:135px;margin:0 auto;}
+
+#lists {width:4000px;}
+#achievements.page1 #lists {left:0;}
+#achievements.page2 #lists {left:-784px;}
+#achievements.page3 #lists {left:-1568px;}
+#achievements.page4 #lists {left:-2352px;}
+#achievements.page5 #lists {left:-3136px;}
+
+#achievements-count {margin:12px 48px 0 0;}
+
+#achievements, #achievements li, #achievements .coin, #achievement-notification, #achievement-notification .coin, #coinsparks,#previous, #next {background-size:832px;}
+#achievements {height:392px;width:832px;margin-left:-416px;margin-top:-216px;font-size:20px;}
+#achievements li {height:52px;width:744px;background-position:0 -392px;margin:10px 0;}
+#achievements li .coin {margin-right:30px;}
+#achievements li span {padding-top:18px;}
+
+#achievement-notification, {width:432px;bottom:44px;height:0;margin-left:-216px;background-position:0 -496px;}
+#achievement-notification.active {height:68px;}
+#achievement-notification .coin {position:absolute;top:-40px;left:50%;margin-left:-24px;opacity:0;}
+#achievement-notification.active .coin {opacity:1;}
+#achievement-notification.active #coinsparks, {height:52px;width:48px;-moz-animation:coinsparks2 0.8s steps(6, end) 7;-webkit-animation:coinsparks2 0.8s steps(6, end) 7;-o-animation:coinsparks2 0.8s steps(6, end) 7;-ms-animation:coinsparks2 0.8s steps(6, end) 7;}
+#achievement-notification .title {color:#fce045;font-size:14px;margin:18px 0 6px 0;}
+#achievement-notification .name {color:#eee;font-size:20px;margin:6px 0;}

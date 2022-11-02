@@ -70,7 +70,7 @@ export default class Camera{
         }
     }
 
-    focusEntity(entity) {
+    focusEntity(entity) {
         var w = this.gridW - 2,
             h = this.gridH - 2,
             x = Math.floor((entity.gridX - 1) / w) * w,

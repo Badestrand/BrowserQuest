@@ -3,7 +3,7 @@ import * as $ from 'jquery'
 import log from './log'
 import Animation from './animation'
 import sprites from './sprites'
-
+console.log('all sprites', sprites)
 
 
 export default class Sprite {

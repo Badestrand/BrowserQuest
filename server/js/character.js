@@ -1,7 +1,6 @@
 import * as log from './log.js'
 import * as Messages from './message.js'
 import * as Utils from './utils.js'
-import Properties from './properties.js'
 import Entity from './entity.js'
 import Types from '../../shared/js/gametypes.js'
 
@@ -29,14 +28,14 @@ export default class Character extends Entity {
         return basestate.concat(state);
     }
     
-    resetHitPoints(maxHitPoints) {
-        this.maxHitPoints = maxHitPoints;
-        this.hitPoints = this.maxHitPoints;
+    resetHitPoints(maxHitpoints) {
+        this.maxHitpoints = maxHitpoints;
+        this.hitPoints = this.maxHitpoints;
     }
     
     regenHealthBy(value) {
         var hp = this.hitPoints,
-            max = this.maxHitPoints;
+            max = this.maxHitpoints;
             
         if(hp < max) {
             if(hp + value <= max) {
@@ -49,7 +48,7 @@ export default class Character extends Entity {
     }
     
     hasFullHealth() {
-        return this.hitPoints === this.maxHitPoints;
+        return this.hitPoints === this.maxHitpoints;
     }
     
     setTarget(entity) {

@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "BrowserQuest server",
   "scripts": {
+    "watch": "nodemon js/main.js",
     "start": "node js/main.js"
   },
   "keywords": [],

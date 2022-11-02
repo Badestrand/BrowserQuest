@@ -72,7 +72,7 @@ export default class Pathfinder {
     /**
      * Removes colliding tiles corresponding to the given entity's position in the pathing grid.
      */
-    ignoreEntity(entity) {
+    ignoreEntity(entity) {
         if(entity) {
             this.ignored.push(entity);
         }

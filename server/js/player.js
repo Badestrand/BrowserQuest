@@ -170,7 +170,7 @@ export default class Player extends Character {
                                 self.broadcast(self.equip(self.armor)); // return to normal after 15 sec
                                 self.firepotionTimeout = null;
                             }, 15000);
-                            self.send(new Messages.HitPoints(self.maxHitPoints).serialize());
+                            self.send(new Messages.HitPoints(self.maxHitpoints).serialize());
                         } else if(Types.isHealingItem(kind)) {
                             var amount;
                             
@@ -374,7 +374,7 @@ export default class Player extends Character {
             if(Types.isArmor(item.kind)) {
                 this.equipArmor(item.kind);
                 this.updateHitPoints();
-                this.send(new Messages.HitPoints(this.maxHitPoints).serialize());
+                this.send(new Messages.HitPoints(this.maxHitpoints).serialize());
             } else if(Types.isWeapon(item.kind)) {
                 this.equipWeapon(item.kind);
             }

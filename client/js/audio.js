@@ -10,7 +10,7 @@ export default class AudioManager {
     constructor(game) {
         var self = this;
     
-        this.enabled = true;
+        this.enabled = false;
         this.extension = Detect.canPlayMP3() ? "mp3" : "ogg";
         this.sounds = {};
         this.game = game;
@@ -126,7 +126,7 @@ export default class AudioManager {
     }
 
     playSound(name) {
-        var sound = this.enabled && this.getSound(name);
+        var sound = /*this.enabled &&*/ this.getSound(name);  // always play sounds
         if(sound) {
             sound.play();
         }

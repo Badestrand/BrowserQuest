@@ -1,19 +1,48 @@
 const path = require('path')
+const JsxPlugin = require('@babel/plugin-syntax-jsx')
 
 
 
 module.exports = {
-	entry: './js/main.js',
+	entry: './js/main.tsx',
 	module: {
 		rules: [{
-			test: /\.js$/,
+			test: /\.(jsx|js|ts|tsx)$/,
+			use: 'ts-loader',
 			exclude: /node_modules/,
-			use: {
-				loader: 'babel-loader',
-				options: {
-					presets: ['@babel/preset-env']
+			// test: /\.(jsx|js)$/,
+			// exclude: /node_modules/,
+			// use: {
+			// 	loader: 'babel-loader',
+			// 	options: {
+			// 		presets: [
+			// 			'@babel/preset-env',
+			// 			'@babel/preset-react'
+			// 		]
+			// 	}
+			// }
+		}, {
+			test: /\.less/,
+			use: [
+				{
+					loader: 'file-loader',
+					options: {
+						name: '[name].css'
+					}
+				},
+				{
+					loader: 'extract-loader'
+				},
+				{
+					loader: 'css-loader',
+					//options: {
+					//	minimize: true
+					//}
+				},
+				{
+					loader: 'less-loader'
 				}
-			}
+			]
 		}, {
 			test: /\.css/,
 			use: [{
@@ -36,7 +65,7 @@ module.exports = {
 		}],
 	},
 	resolve: {
-		extensions: ['.tsx', '.ts', '.js', '.json'],
+		extensions: ['.tsx', '.ts', '.js', 'jsx', '.json'],
 	},
 	output: {
 		filename: 'bundle.js',
