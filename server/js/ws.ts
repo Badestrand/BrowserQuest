@@ -211,6 +211,7 @@ export class socketIOConnection extends Connection {
     }
     
     send(message) {
+        console.log('Sending:', message)
         this._connection.emit("message", message);
     }
     

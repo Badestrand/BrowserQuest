@@ -541,9 +541,11 @@ export default class World {
         // If the entity is about to die
         if(entity.hitPoints <= 0) {
             if(entity.type === "mob") {
-                var mob = entity,
-                    item = this.getDroppedItem(mob);
-                this.pushToPlayer(attacker, new Messages.Kill(mob, Properties.getMobExperience(mob.kind)));
+                var mob = entity
+                var item = this.getDroppedItem(mob)
+                const exp = Properties.getMobExperience(mob.kind)
+                this.pushToPlayer(attacker, new Messages.Kill(mob, exp))
+                attacker.addExperience(exp)
                 this.pushToAdjacentGroups(mob.group, mob.despawn()); // Despawn must be enqueued before the item drop
                 if(item) {
                     this.pushToAdjacentGroups(mob.group, mob.drop(item));

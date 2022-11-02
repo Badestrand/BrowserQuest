@@ -5,22 +5,8 @@ import Character from  './character'
 import * as Exceptions from  './exceptions'
 import {clone} from './util'
 import * as Types from '../../shared/gametypes'
-import {AllHeroClasses} from '../../shared/game'
+import {AllCharacterClasses, LEVEL_REQUIREMENTS, ATTR_POINTS_PER_LEVEL} from '../../shared/game'
 
-
-
-
-const LEVEL_EXPERIENCE_REQUIREMENTS = [
-	0, 500, 1500, 3750, 7875, 14175, 22680, 32886, 44396, 57715, 72144, 
-	90180, 112725, 140906, 176132, 220165, 275207, 344008, 430010, 537513, 671891, 839864, 
-	1049830, 1312287, 1640359, 2050449, 2563061, 3203826, 3902260, 4663553, 5493363, 6397855, 7383755, 
-	8458379, 9629723, 10906488, 12298162, 13815086, 15468534, 17270791, 19235252, 21376515, 23710491, 26254525, 
-	29027522, 32050088, 35344686, 38935798, 42850109, 47116709, 51767302, 56836449, 62361819, 68384473, 74949165, 
-	82104680, 89904191, 98405658, 107672256, 117772849, 128782495, 140783010, 153863570, 168121381, 183662396, 200602101, 
-	219066380, 239192444, 261129853, 285041630, 311105466, 339515048, 370481492, 404234916, 441026148, 481128591, 524840254, 
-	572485967, 624419793, 681027665, 742730244, 809986056, 883294891, 963201521, 1050299747, 1145236814, 1248718217, 1361512946, 
-	1484459201, 1618470619, 1764543065, 1923762030, 2097310703, 2286478756, 2492671933, 2717422497, 2962400612, 3229426756, 3520485254
-]
 
 
 
@@ -43,7 +29,7 @@ export default class Player extends Character {
 
 
 		const characterClassName = 'Barbarian'
-		const classInfo = _.findWhere(AllHeroClasses, {name: characterClassName})
+		const classInfo = _.findWhere(AllCharacterClasses, {name: characterClassName})
 		if (!classInfo) {
 			throw new Error('Invalid character class name '+characterClassName)
 		}
@@ -255,19 +241,19 @@ export default class Player extends Character {
 		}
 	}
 
-	private invincible: boolean
-	private invincible_callback: any
-	private invincibleTimeout: any
-	private currentArmorSprite: any
-	private armorloot_callback: any
-	private switch_callback: any
-	private isSwitchingArmor: boolean
-	private isSwitchingWeapon: boolean
-	private switchingWeapon: any
-	private weaponName: string
-	private spriteName: string
-	private isLootMoving: boolean
-	private nameOffsetY: number
+	public invincible: boolean
+	public invincible_callback: any
+	public invincibleTimeout: any
+	public currentArmorSprite: any
+	public armorloot_callback: any
+	public switch_callback: any
+	public isSwitchingArmor: boolean
+	public isSwitchingWeapon: boolean
+	public switchingWeapon: any
+	public weaponName: string
+	public spriteName: string
+	public isLootMoving: boolean
+	public nameOffsetY: number
 
 
 
@@ -322,9 +308,9 @@ export default class Player extends Character {
 	gainExperience(experience: number): void {
 		this.experience += experience
 
-		while (this.experience>=LEVEL_EXPERIENCE_REQUIREMENTS[this.level] && this.level<Player.getMaxLevel()) {
+		while (this.experience>=LEVEL_REQUIREMENTS[this.level] && this.level<Player.getMaxLevel()) {
 			this.level += 1
-			this.unspentAttrPoints += 5
+			this.unspentAttrPoints += ATTR_POINTS_PER_LEVEL
 			this.unspentSkillPoints += 1
 			this.updateLifeAndMana()
 			// this.curLife = this.maxHitpoints
@@ -339,14 +325,14 @@ export default class Player extends Character {
 	}
 
 	getExperienceProgressForThisLevel(): number {
-		const levelStart = LEVEL_EXPERIENCE_REQUIREMENTS[this.level-1]
-		const levelEnd = LEVEL_EXPERIENCE_REQUIREMENTS[this.level]
+		const levelStart = LEVEL_REQUIREMENTS[this.level-1]
+		const levelEnd = LEVEL_REQUIREMENTS[this.level]
 		const progress = (this.experience - levelStart) / (levelEnd - levelStart)
 		return progress
 	}
 
 	getNextExperienceRequirement(): number {
-		return LEVEL_EXPERIENCE_REQUIREMENTS[this.level]
+		return LEVEL_REQUIREMENTS[this.level]
 	}
 
 
@@ -359,14 +345,12 @@ export default class Player extends Character {
 		return this.attrPoints[attr]
 	}
 
-	spendAttrPoint(attr: 'str'|'dex'|'vit'|'ene'): void {
+	spendAttrPoint(attr: AttrShort): void {
 		if (this.unspentAttrPoints === 0) {
 			throw new Error('No attribute points left')
 		}
 		this.attrPoints[attr] += 1
 		this.unspentAttrPoints -= 1
-
-		// TODO: inform server
 
 		// re-calculate maxHitpoints and maxMana and make sure we don't lose life/mana from spending attribute points (because maxHitpoints/maxMana goes up and curLife/curMana doesn't)
 		const prevMaxLife = this.maxHitpoints
@@ -435,7 +419,7 @@ export default class Player extends Character {
 
 
 	// private name: string
-	private classInfo: HeroClassInfo
+	private classInfo: CharacterClassInfo
 	private level: number
 	private experience: number
 	private unspentAttrPoints: number

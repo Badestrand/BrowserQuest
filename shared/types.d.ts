@@ -86,16 +86,20 @@ type ShieldVariantInfo = ArmorVariantInfo & {
 
 
 
+type AttrPointsInfo = {
+	str: number
+	dex: number
+	vit: number
+	ene: number
+}
+
+type AttrShort = 'str'|'dex'|'vit'|'ene'
+
 type SlotInfo = 'head' | 'left-hand' | 'right-hand' | 'torso'
 
-type HeroClassInfo = {
+type CharacterClassInfo = {
 	name: string
-	attributes: {
-		str: number
-		dex: number
-		vit: number
-		ene: number
-	},
+	attributes: AttrPointsInfo
 	life: number
 	mana: number
 	stam: number

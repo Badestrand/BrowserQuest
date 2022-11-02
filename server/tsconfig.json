@@ -11,7 +11,8 @@
 	],
 	"include": [
 		"**/*.ts",
-		"../shared"
+		"../shared",
+		"../shared/types.d.ts"
 	],
 	"exclude": [
 		"node_modules"

@@ -562,7 +562,7 @@ class ActionBar extends React.Component<any, any> {
 			this.setState({characterPopup: null})
 		} else {
 			let x: any = {}
-			const popup = showPopup(<CharacterScreen player={game.player} onClose={() => {
+			const popup = showPopup(<CharacterScreen game={game} player={game.player} onClose={() => {
 				closePopup(x.popup)
 				this.setState({characterPopup: null})
 			}}/>)

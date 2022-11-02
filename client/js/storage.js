@@ -2,7 +2,7 @@ import * as _ from 'underscore'
 
 import Player from './player'
 import {clone} from './util'
-import {AllHeroClasses} from '../../shared/game'
+import {AllCharacterClasses} from '../../shared/game'
 
 
 
@@ -21,7 +21,7 @@ export default class Storage {
 	}
 
 	resetData() {
-		const classInfo = _.findWhere(AllHeroClasses, {name: 'Barbarian'})
+		const classInfo = _.findWhere(AllCharacterClasses, {name: 'Barbarian'})
 		this.data = {
 			hasAlreadyPlayed: false,
 			player: {  // TODO: should come from empty player?

@@ -3,12 +3,13 @@ import {useState, useEffect} from 'react'
 import * as EventEmitter from 'eventemitter3'
 
 import {useWatchEvents} from './utils'
+import Game from '../game'
 import Player from '../player'
 
 
 
 
-export default function CharacterScreen({player, onClose}: {player: Player, onClose: ()=>void}) {
+export default function CharacterScreen({game, player, onClose}: {game: Game, player: Player, onClose: ()=>void}) {
 	useWatchEvents(player, 'update')
 
 	const [visible, setVisible] = useState(false)
@@ -54,7 +55,8 @@ export default function CharacterScreen({player, onClose}: {player: Player, onCl
 							</span>
 							{unspentPoints>0 && (
 							<button type="button" onClick={() => {
-								player.spendAttrPoint(attr[1] as "str" | "dex" | "vit" | "ene")
+								player.spendAttrPoint(attr[1] as AttrShort)
+								game.client.sendSpendAttr(attr[1] as AttrShort)
 							}}>
 								+
 							</button>

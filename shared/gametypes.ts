@@ -1,4 +1,4 @@
-const Messages = {
+/*const Messages = {
 	HELLO: 0,
 	WELCOME: 1,
 	SPAWN: 2,
@@ -27,6 +27,37 @@ const Messages = {
 	OPEN: 25,
 	CHECK: 26,
 	// GAINEXP: 27,
+}*/
+
+const Messages = {
+	HELLO: 'HELLO',
+	WELCOME: 'WELCOME',
+	SPAWN: 'SPAWN',
+	DESPAWN: 'DESPAWN',
+	MOVE: 'MOVE',
+	LOOTMOVE: 'LOOTMOVE',
+	AGGRO: 'AGGRO',
+	ATTACK: 'ATTACK',
+	HIT: 'HIT',
+	HURT: 'HURT',
+	HEALTH: 'HEALTH',
+	CHAT: 'CHAT',
+	LOOT: 'LOOT',
+	EQUIP: 'EQUIP',
+	DROP: 'DROP',
+	TELEPORT: 'TELEPORT',
+	DAMAGE: 'DAMAGE',
+	POPULATION: 'POPULATION',
+	KILL: 'KILL',
+	LIST: 'LIST',
+	WHO: 'WHO',
+	ZONE: 'ZONE',
+	DESTROY: 'DESTROY',
+	HP: 'HP',
+	BLINK: 'BLINK',
+	OPEN: 'OPEN',
+	CHECK: 'CHECK',
+	SPEND_ATTR: 'SPEND_ATTR',
 }
 	
 const Entities = {

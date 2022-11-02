@@ -35,7 +35,7 @@ export default class GameClient extends EventEmitter {
 		this.handlers[Types.Messages.ATTACK] = this.receiveAttack;
 		this.handlers[Types.Messages.SPAWN] = this.receiveSpawn;
 		this.handlers[Types.Messages.DESPAWN] = this.receiveDespawn;
-		this.handlers[Types.Messages.SPAWN_BATCH] = this.receiveSpawnBatch;
+		// this.handlers[Types.Messages.SPAWN_BATCH] = this.receiveSpawnBatch;
 		this.handlers[Types.Messages.HEALTH] = this.receiveHealth;
 		this.handlers[Types.Messages.CHAT] = this.receiveChat;
 		this.handlers[Types.Messages.EQUIP] = this.receiveEquipItem;
@@ -65,8 +65,8 @@ export default class GameClient extends EventEmitter {
 		 var url = "http://" + this.host + ":" + this.port + "/",
 			self = this;
 
-		 
-		this.connection = io(url, {'force new connection':true});
+
+		this.connection = (window as any).io(url, {'force new connection':true});
 		this.connection.on('connection', function(socket){
 			log.info("Connected to server " + url);
 		});
@@ -538,12 +538,46 @@ export default class GameClient extends EventEmitter {
 	}
 
 	sendOpen(chest) {
-		this.sendMessage([Types.Messages.OPEN,
-						  chest.id]);
+		this.sendMessage([Types.Messages.OPEN, chest.id]);
 	}
 
 	sendCheck(id) {
-		this.sendMessage([Types.Messages.CHECK,
-						  id]);
+		this.sendMessage([Types.Messages.CHECK, id]);
 	}
+
+	sendSpendAttr(attr: 'str'|'dex'|'vit'|'ene') {
+		this.sendMessage([Types.Messages.SPEND_ATTR, attr])
+	}
+
+
+	public connection: any
+	public host: any
+	public port: any
+	public connected_callback: any
+	public spawn_callback: any
+	public movement_callback: any
+	public despawn_callback: any
+	public health_callback: any
+	public chat_callback: any
+	public spawn_character_callback: any
+	public handlers: any
+	public isListening: boolean
+	public dispatched_callback: any
+	public disconnected_callback: any
+	public welcome_callback: any
+	public move_callback: any
+	public lootmove_callback: any
+	public attack_callback: any
+	public spawn_item_callback: any
+	public spawn_chest_callback: any
+	public equip_callback: any
+	public drop_callback: any
+	public teleport_callback: any
+	public population_callback: any
+	public dmg_callback: any
+	public kill_callback: any
+	public list_callback: any
+	public hp_callback: any
+	public destroy_callback: any
+	public isTimeout: boolean
 }
