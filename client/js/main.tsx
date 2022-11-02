@@ -268,7 +268,7 @@ function IntroScreen({heroInfo, onStartNewGame, onLoadGame}: any) {
 function InstructionsScreen({onClose}: any) {
 	return (
 		<article id="instructions">
-			<div className="close-screen"/>
+			<div className="close-screen" onClick={onClose}/>
 			<h1>
 				<span className="left-ornament"/>
 				How to play
@@ -363,7 +363,7 @@ function Parchment({children, events, introduce}: any) {
 	useEffect(() => {
 		setTimeout(() => {
 			setAnimating(false)
-		}, 1000)
+		}, 500)
 
 		const onClose = () => {
 			setAnimating(true)
@@ -577,14 +577,14 @@ class ActionBar extends React.Component<any, any> {
 		const {helpPopup} = this.state
 
 		if (helpPopup) {
-			closePopup(helpPopup)
+			hideParchment()
 			this.setState({helpPopup: null})
 		} else {
-			const popup = showParchment(<InstructionsScreen onClose={() => {
+			showParchment(<InstructionsScreen onClose={() => {
 				hideParchment()
 				this.setState({helpPopup: null})
 			}}/>)
-			this.setState({helpPopup: popup})
+			this.setState({helpPopup: true})
 		}
 	}
 
