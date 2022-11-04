@@ -189,7 +189,6 @@ export default class Renderer {
 
 	drawTargetCell() {
 		var mouse = this.game.getMouseGridPosition();
-	
 		if(this.game.targetCellVisible && !(mouse.x === this.game.selectedX && mouse.y === this.game.selectedY)) {
 			this.drawCellHighlight(mouse.x, mouse.y, this.game.targetColor);
 		}
@@ -780,16 +779,16 @@ export default class Renderer {
 
 
 
-	renderFrame() {
+	renderFrame(showCursor) {
 		if(this.mobile || this.tablet) {
 			this.renderFrameMobile();
 		}
 		else {
-			this.renderFrameDesktop();
+			this.renderFrameDesktop(showCursor);
 		}
 	}
 
-	renderFrameDesktop() {
+	renderFrameDesktop(showCursor) {
 		this.clearScreen(this.context);
 	
 		this.context.save();
@@ -798,7 +797,9 @@ export default class Renderer {
 
 			if(this.game.started) {
 				this.drawSelectedCell();
-				this.drawTargetCell();
+				if (showCursor) {
+					this.drawTargetCell();
+				}
 			}
 
 			//this.drawOccupiedCells();
@@ -809,7 +810,9 @@ export default class Renderer {
 		this.context.restore();
 
 		// Overlay UI elements
-		this.drawCursor();
+		if (showCursor) {
+			this.drawCursor();
+		}
 		this.drawDebugInfo();
 	}
 

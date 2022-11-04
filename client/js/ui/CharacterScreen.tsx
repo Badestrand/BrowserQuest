@@ -56,7 +56,6 @@ export default function CharacterScreen({game, player, onClose}: {game: Game, pl
 							{unspentPoints>0 && (
 							<button type="button" onClick={() => {
 								player.spendAttrPoint(attr[1] as AttrShort)
-								game.client.sendSpendAttr(attr[1] as AttrShort)
 							}}>
 								+
 							</button>

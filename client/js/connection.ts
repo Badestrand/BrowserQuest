@@ -2,8 +2,9 @@ import * as _ from 'underscore'
 import * as $ from 'jquery'
 import EventEmitter from 'eventemitter3'
 import {io} from 'socket.io-client'
+import {JSONRPCServerAndClient, JSONRPCClient, JSONRPCServer} from 'json-rpc-2.0'
 
-import server from './server'
+import config from './config'
 import log from './log'
 import Player from './player'
 import EntityFactory from './entityfactory'
@@ -11,28 +12,63 @@ import * as Types from '../../shared/gametypes'
 
 
 
-/*
-	Currently this class runs on callbacks but I started to convert it to use a event emitter to make it leaner.
 
-	I am not sure though yet on when I need to detach the listeners from here. Because with the callbacks there
-	  always was only one but with the listeners it may crash things if there are some from old states.
-*/
-
-
-// TODO: Fuse this and ./server.ts
-export default class GameClient extends EventEmitter {
-	constructor() {
+class Connection extends EventEmitter {
+	constructor(host: string, port: number) {
 		super()
-		// this.connection = null;
+		this._conn = io('http://'+host+':'+port+'/')
+		this._rpc = null
+		this._connected = false
+		this._err = null
+
+		this._connPromise = new Promise((resolve, reject) => {
+			this._conn.on('connect', (socket) => {
+				this._connected = true
+				console.log('connected!')
+
+				this._rpc = new JSONRPCServerAndClient(
+					new JSONRPCServer(),
+					new JSONRPCClient(async (request) => {
+						try {
+							console.log('sending', JSON.stringify(request))
+							this._conn.emit('rpc', JSON.stringify(request))
+						}
+						catch (error) {
+							// ?
+							// return new Promise.reject(error)
+						}
+					})
+				)
+				resolve()
+			})
+		})
+
+		this._conn.on('disconnect', () => {
+			console.log('Server.DISCONNECT')
+			// does it automatically try to reconnect?
+			// this._connected = false
+			// this._conn = null
+		})
+
+		this._conn.on('err', (err: Error) => {
+			console.log('Server.ERR', err)
+			// this._connected = false
+			// this._err = err
+			// this._conn = null
+		})
+
+		this._conn.on('rpc', (message) => {
+			console.log('RPC received', message)
+			this._rpc.receiveAndSend(JSON.parse(message))
+		})
+
 
 		this.handlers = [];
-		// this.handlers[Types.Messages.WELCOME] = this.receiveWelcome;
 		this.handlers[Types.Messages.MOVE] = this.receiveMove;
 		this.handlers[Types.Messages.LOOTMOVE] = this.receiveLootMove;
 		this.handlers[Types.Messages.ATTACK] = this.receiveAttack;
 		this.handlers[Types.Messages.SPAWN] = this.receiveSpawn;
 		this.handlers[Types.Messages.DESPAWN] = this.receiveDespawn;
-		// this.handlers[Types.Messages.SPAWN_BATCH] = this.receiveSpawnBatch;
 		this.handlers[Types.Messages.HEALTH] = this.receiveHealth;
 		this.handlers[Types.Messages.CHAT] = this.receiveChat;
 		this.handlers[Types.Messages.EQUIP] = this.receiveEquipItem;
@@ -47,24 +83,20 @@ export default class GameClient extends EventEmitter {
 		this.handlers[Types.Messages.MAX_MANA] = this.receiveMaxMana;
 		this.handlers[Types.Messages.MANA] = this.receiveMana;
 		this.handlers[Types.Messages.BLINK] = this.receiveBlink;
-		// this.handlers[Types.Messages.GAINEXP] = this.receiveExperience;
 	
 		this.enable();
 
-		// this.connection = io(url, {
+		// this._conn = io(url, {
 		// 	forceNew: true
 		// })
-		// this.connection.on('connect', (socket) => {
+		// this._conn.on('connect', (socket) => {
 		// 	log.info("Connected to server " + url)
 		// 	if(self.connected_callback) {
 		// 		self.connected_callback()
 		// 	}
 		// });
 
-		this.connection = server.connection()
-
-		this.connection.on('message', (data) => {
-			console.log('received message', data)
+		this._conn.on('message', (data) => {
 			if(data === 'timeout') {
 				this.isTimeout = true
 				return
@@ -72,11 +104,11 @@ export default class GameClient extends EventEmitter {
 			this.receiveMessage(data)
 		})
 
-		/*this.connection.onerror = function(e) {
+		/*this._conn.onerror = function(e) {
 			log.error(e, true);
 		};*/
 
-		this.connection.on('disconnect', () => {
+		this._conn.on('disconnect', () => {
 			log.debug("Connection closed")
 
 			if(this.disconnected_callback) {
@@ -87,6 +119,27 @@ export default class GameClient extends EventEmitter {
 				}
 			}
 		})
+	}
+
+
+	async connect(): Promise<void> {
+		if (this._err) {
+			throw this._err
+		}
+		if (this._connected) {
+			return
+		}
+		return this._connPromise
+	}
+
+
+	isConnected(): boolean {
+		return this._connected
+	}
+
+
+	error(): Error {
+		return this._err
 	}
 
 
@@ -101,8 +154,8 @@ export default class GameClient extends EventEmitter {
 
 
 	sendMessage(json) {
-		if(this.connection.connected) {
-			this.connection.emit("message", json);
+		if(this._conn.connected) {
+			this._conn.emit("message", json);
 		}
 	}
 
@@ -376,8 +429,7 @@ export default class GameClient extends EventEmitter {
 
 
 	receiveBlink(data) {
-		var id = data[1];
-		this.emit(Types.Messages.BLINK, id)
+		this.emit(Types.Messages.BLINK, data[1])
 	}
 
 
@@ -543,34 +595,73 @@ export default class GameClient extends EventEmitter {
 
 
 
-	public connection: any
-	// public connected_callback: any
-	public spawn_callback: any
-	public movement_callback: any
-	public despawn_callback: any
-	public health_callback: any
-	public chat_callback: any
-	public spawn_character_callback: any
-	public handlers: any
-	public isListening: boolean
-	public dispatched_callback: any
-	public disconnected_callback: any
-	public welcome_callback: any
-	public move_callback: any
-	public lootmove_callback: any
-	public attack_callback: any
-	public spawn_item_callback: any
-	public spawn_chest_callback: any
-	public equip_callback: any
-	public drop_callback: any
-	public teleport_callback: any
-	public population_callback: any
-	public dmg_callback: any
-	public kill_callback: any
-	public list_callback: any
-	public max_hitpoints_callback: any
-	public max_mana_callback: any
-	public mana_callback: any
-	public destroy_callback: any
-	public isTimeout: boolean
+
+
+	async previewPlayer(ident: string, secret: string): Promise<HeroInfo> {
+		await this._connPromise
+		if (this._err) {
+			throw this._err
+		}
+		if (!this._connected) {
+			throw new Error('Not connected to server')
+		}
+
+		return await this._rpc.request('previewPlayer', {ident, secret})
+	}
+
+
+	async createPlayer(charClassId: string, name: string): Promise<HeroInfo> {
+		await this._connPromise
+		return await this._rpc.request('createPlayer', {charClassId, name})
+	}
+
+
+	async enter({ident, secret}: {ident: string, secret: string}): Promise<{hero: HeroInfo, id: number, x: number, y: number}> {
+		await this._connPromise
+		return await this._rpc.request('enter', {ident, secret})
+	}
+
+
+	private _conn: any
+	// private _ws: WebSocket
+	private _rpc: any
+	private _err: Error
+	private _connected: boolean
+	private _connPromise: Promise<void>
+
+	private spawn_callback: any
+	private movement_callback: any
+	private despawn_callback: any
+	private health_callback: any
+	private chat_callback: any
+	private spawn_character_callback: any
+	private handlers: any
+	private isListening: boolean
+	private dispatched_callback: any
+	private disconnected_callback: any
+	private welcome_callback: any
+	private move_callback: any
+	private lootmove_callback: any
+	private attack_callback: any
+	private spawn_item_callback: any
+	private spawn_chest_callback: any
+	private equip_callback: any
+	private drop_callback: any
+	private teleport_callback: any
+	private population_callback: any
+	private dmg_callback: any
+	private kill_callback: any
+	private list_callback: any
+	private max_hitpoints_callback: any
+	private max_mana_callback: any
+	private mana_callback: any
+	private destroy_callback: any
+	private isTimeout: boolean
 }
+
+
+
+
+
+const connection = new Connection(config.host, config.port)
+export default connection

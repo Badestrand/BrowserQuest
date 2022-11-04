@@ -1,11 +1,10 @@
 import * as _ from 'underscore'
-// import * as $ from 'jquery'
 import EventEmitter from 'eventemitter3'
 import * as React from 'react'
 import {useState, useEffect, useRef} from 'react'
 import ReactDOM from 'react-dom/client'
 
-import server from './server'
+import connection from './connection'
 import log from './log'
 import Game from './game'
 import Renderer from './renderer'
@@ -48,7 +47,7 @@ function NewCharacterScreen({onPlay, onHelp}: any) {
 		if (isValidName && !loading) {
 			setLoading(true)
 			try {
-				const hero = await server.createPlayer(charClass.id, name)
+				const hero = await connection.createPlayer(charClass.id, name)
 				onPlay(hero)
 				setLoading(false)
 			}
@@ -329,7 +328,7 @@ function IntroScreen2({onStart}: {onStart: (hero: HeroInfo)=>void}) {
 		const heroAccess = getSavedHeroAccess()
 		if (heroAccess) {
 			setLoading(true)
-			server.previewPlayer(heroAccess.ident, heroAccess.secret)
+			connection.previewPlayer(heroAccess.ident, heroAccess.secret)
 				.then((hero) => {
 					setHero(hero)
 					setMode('load')
@@ -877,7 +876,13 @@ function GameScreen({hero}: {hero: HeroInfo}) {
 			const y = event.pageY - gamePos.top - (newGame.renderer.mobile ? 0 : 7 * scale)
 			newGame.mouse.x = Math.max(0, Math.min(width-1, x))
 			newGame.mouse.y = Math.max(0, Math.min(height-1, y))
-			newGame.movecursor()
+			newGame.moveCursor()
+		}
+		const onMouseEnter = (event) => {
+			newGame.showCursor()
+		}
+		const onMouseLeave = (event) => {
+			newGame.hideCursor()
 		}
 		const onMouseMove = (event) => {
 			setMouseCoordinates(event)
@@ -892,11 +897,15 @@ function GameScreen({hero}: {hero: HeroInfo}) {
 		}
 
 		const canvas = document.getElementById('foreground')
+		canvas.addEventListener('mouseenter', onMouseEnter)
+		canvas.addEventListener('mouseleave', onMouseLeave)
 		canvas.addEventListener('mousemove', onMouseMove)
 		canvas.addEventListener('touchstart', onTouchStart)
 		canvas.addEventListener('click', onClick)
 
 		return () => {
+			canvas.removeEventListener('mouseenter', onMouseEnter)
+			canvas.removeEventListener('mouseleave', onMouseLeave)
 			canvas.removeEventListener('mousemove', onMouseMove)
 			canvas.removeEventListener('touchstart', onTouchStart)
 			canvas.removeEventListener('click', onClick)

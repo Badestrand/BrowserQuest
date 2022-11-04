@@ -8,7 +8,6 @@ import Map from './map'
 import Animation from './animation'
 import Sprite from './sprite'
 import AnimatedTile from './tile'
-import GameClient from './gameclient'
 import AudioManager from './audio'
 import Updater from './updater'
 import Transition from './transition'
@@ -20,7 +19,7 @@ import Npc from './npc'
 import Player from './player'
 import Character from './character'
 import Chest from './chest'
-import server from './server'
+import connection from './connection'
 import * as Mobs from './mobs'
 import * as Exceptions from  './exceptions'
 import config from './config'
@@ -34,6 +33,7 @@ export default class Game {
 		this.ready = false;
 		this.started = false;
 		this.hasNeverStarted = true;
+		this.cursorVisible = true
 	
 		this.updater = null;
 		this.pathfinder = null;
@@ -141,13 +141,12 @@ export default class Game {
 
 
 	async enter({ident, secret}, started_callback) {
-		const {hero, id, x, y} = await server.enter({ident, secret})
+		const {hero, id, x, y} = await connection.enter({ident, secret})
 		log.info('Entering the world with id '+id+' at '+x+'/'+y)
 
-		this.client = new GameClient()
 		this.started = true;
 
-		this.client.onEntityList((list) => {
+		connection.onEntityList((list) => {
 			const entityIds = _.pluck(this.entities, 'id')
 			const knownIds = _.intersection(entityIds, list)
 			const newIds = _.difference(list, knownIds)
@@ -161,7 +160,7 @@ export default class Game {
 			
 			// Ask the server for spawn information about unknown entities
 			if(_.size(newIds) > 0) {
-				this.client.sendWho(newIds);
+				connection.sendWho(newIds);
 			}
 		})
 
@@ -201,7 +200,7 @@ export default class Game {
 				this.player.isLootMoving = false;
 			}
 			else if(!this.player.isAttacking()) {
-				this.client.sendMove(x, y);
+				connection.sendMove(x, y);
 			}
 
 			// Target cursor position
@@ -228,7 +227,7 @@ export default class Game {
 		this.player.onAggro((mob) => {
 			if(!mob.isWaitingToAttack(this.player) && !this.player.isAttackedBy(mob)) {
 				this.player.log_info("Aggroed by " + mob.id + " at ("+this.player.gridX+", "+this.player.gridY+")");
-				this.client.sendAggro(mob);
+				connection.sendAggro(mob);
 				mob.waitToAttack(this.player);
 			}
 		});
@@ -297,7 +296,7 @@ export default class Game {
 			
 				try {
 					this.player.loot(item);
-					this.client.sendLoot(item); // Notify the server that this item has been looted
+					connection.sendLoot(item); // Notify the server that this item has been looted
 					this.removeItem(item);
 					this.showNotification(item.getLootMessage());
 				
@@ -344,7 +343,7 @@ export default class Game {
 				this.player.nextGridX = dest.x;
 				this.player.nextGridY = dest.y;
 				this.player.turnTo(dest.orientation);
-				this.client.sendTeleport(dest.x, dest.y);
+				connection.sendTeleport(dest.x, dest.y);
 				
 				if(this.renderer.mobile && dest.cameraX && dest.cameraY) {
 					this.camera.setGridPosition(dest.cameraX, dest.cameraY);
@@ -387,7 +386,7 @@ export default class Game {
 			if(this.player.target instanceof Npc) {
 				this.makeNpcTalk(this.player.target);
 			} else if(this.player.target instanceof Chest) {
-				this.client.sendOpen(this.player.target);
+				connection.sendOpen(this.player.target);
 				this.audioManager.playSound("chest");
 			}
 			
@@ -422,7 +421,7 @@ export default class Game {
 				this.removeFromRenderingGrid(this.player, this.player.gridX, this.player.gridY);
 			
 				this.player = null;
-				this.client.disable();
+				connection.disable();
 			
 				setTimeout(() => {
 					this.playerdeath_callback();
@@ -460,12 +459,12 @@ export default class Game {
 			this.player.switchArmor(this.sprites["firefox"]);
 		});
 	
-		this.client.onSpawnItem((item, x, y) => {
+		connection.onSpawnItem((item, x, y) => {
 			log.info("Spawned " + Types.getKindAsString(item.kind) + " (" + item.id + ") at "+x+", "+y);
 			this.addItem(item, x, y);
 		});
 	
-		this.client.onSpawnChest((chest, x, y) => {
+		connection.onSpawnChest((chest, x, y) => {
 			log.info("Spawned chest (" + chest.id + ") at "+x+", "+y);
 			chest.setSprite(this.sprites[chest.getSpriteName()]);
 			chest.setGridPosition(x, y);
@@ -484,7 +483,7 @@ export default class Game {
 			});
 		});
 	
-		this.client.onSpawnCharacter((entity, x, y, orientation, targetId) => {
+		connection.onSpawnCharacter((entity, x, y, orientation, targetId) => {
 			if(!this.entityIdExists(entity.id)) {
 				try {
 					if(entity.id !== this.playerId) {
@@ -627,7 +626,7 @@ export default class Game {
 			}
 		});
 
-		this.client.onDespawnEntity((entityId) => {
+		connection.onDespawnEntity((entityId) => {
 			var entity = this.getEntityById(entityId);
 	
 			if(entity) {
@@ -655,14 +654,14 @@ export default class Game {
 			}
 		});
 	
-		this.client.on(Types.Messages.BLINK, (itemId) => {
+		connection.on(Types.Messages.BLINK, (itemId) => {
 			var item = this.getEntityById(itemId)
 			if(item) {
 				item.blink(150)
 			}
 		})
 
-		this.client.onEntityMove((id, x, y) => {
+		connection.onEntityMove((id, x, y) => {
 			var entity = null;
 
 			if(id !== this.playerId) {
@@ -679,7 +678,7 @@ export default class Game {
 			}
 		});
 	
-		this.client.onEntityDestroy((id) => {
+		connection.onEntityDestroy((id) => {
 			var entity = this.getEntityById(id);
 			if(entity) {
 				if(entity instanceof Item) {
@@ -691,7 +690,7 @@ export default class Game {
 			}
 		});
 	
-		this.client.onPlayerMoveToItem((playerId, itemId) => {
+		connection.onPlayerMoveToItem((playerId, itemId) => {
 			var player, item;
 
 			if(playerId !== this.playerId) {
@@ -704,7 +703,7 @@ export default class Game {
 			}
 		});
 	
-		this.client.onEntityAttack((attackerId, targetId) => {
+		connection.onEntityAttack((attackerId, targetId) => {
 			var attacker = this.getEntityById(attackerId),
 				target = this.getEntityById(targetId);
 		
@@ -721,14 +720,14 @@ export default class Game {
 			}
 		});
 	
-		this.client.onPlayerDamageMob((mobId, points) => {
+		connection.onPlayerDamageMob((mobId, points) => {
 			var mob = this.getEntityById(mobId);
 			if(mob && points) {
 				this.infoManager.addDamageInfo(points, mob.x, mob.y - 15, "inflicted");
 			}
 		});
 	
-		this.client.onPlayerKillMob((kind, exp) => {
+		connection.onPlayerKillMob((kind, exp) => {
 			const mobName = Types.getDisplayName(kind);
 
 			if(mobName === 'boss') {
@@ -770,7 +769,7 @@ export default class Game {
 			}, 400)
 		})
 	
-		this.client.onPlayerChangeHealth((points, isRegen) => {
+		connection.onPlayerChangeHealth((points, isRegen) => {
 			let player = this.player
 
 			if(player && !player.isDead && !player.invincible) {
@@ -793,22 +792,22 @@ export default class Game {
 			}
 		});
 	
-		this.client.onPlayerChangeMaxHitpoints((points) => {
+		connection.onPlayerChangeMaxHitpoints((points) => {
 			this.player.setMaxHitpoints(points)
 			this.updateBars()
 		})
 
-		this.client.onPlayerChangeCurMana((points, isRegen) => {
+		connection.onPlayerChangeCurMana((points, isRegen) => {
 			this.player.mana = points
 			this.updateBars()
 		})
 
-		this.client.onPlayerChangeMaxMana((points) => {
+		connection.onPlayerChangeMaxMana((points) => {
 			this.player.setMaxMana(points)
 			this.updateBars()
 		})
 	
-		this.client.onPlayerEquipItem((playerId, itemKind) => {
+		connection.onPlayerEquipItem((playerId, itemKind) => {
 			var player = this.getEntityById(playerId),
 				itemName = Types.getKindAsString(itemKind);
 		
@@ -821,7 +820,7 @@ export default class Game {
 			}
 		});
 	
-		this.client.onPlayerTeleport((id, x, y) => {
+		connection.onPlayerTeleport((id, x, y) => {
 			var entity = null,
 				currentOrientation;
 
@@ -843,7 +842,7 @@ export default class Game {
 			}
 		});
 	
-		this.client.onDropItem((item, mobId) => {
+		connection.onDropItem((item, mobId) => {
 			var pos = this.getDeadMobPosition(mobId);
 		
 			if(pos) {
@@ -852,20 +851,20 @@ export default class Game {
 			}
 		});
 	
-		this.client.onChatMessage((entityId, message) => {
+		connection.onChatMessage((entityId, message) => {
 			var entity = this.getEntityById(entityId);
 			this.createBubble(entityId, message);
 			this.assignBubbleTo(entity);
 			this.audioManager.playSound("chat");
 		});
 	
-		this.client.onPopulationChange((worldPlayers, totalPlayers) => {
+		connection.onPopulationChange((worldPlayers, totalPlayers) => {
 			if(this.nbplayers_callback) {
 				this.nbplayers_callback(worldPlayers, totalPlayers);
 			}
 		});
 		
-		this.client.onDisconnected((message) => {
+		connection.onDisconnected((message) => {
 			if(this.player) {
 				this.player.die();
 			}
@@ -1419,7 +1418,7 @@ export default class Game {
 		if(this.started) {
 			this.updateCursorLogic();
 			this.updater.update();
-			this.renderer.renderFrame();
+			this.renderer.renderFrame(this.cursorVisible);
 		}
 
 		if(!this.isStopped) {
@@ -1479,7 +1478,7 @@ export default class Game {
 	 * @see GameClient.sendHello
 	 */
 	sendHello(ident, secret) {
-		this.client.sendHello(ident, secret);
+		connection.sendHello(ident, secret);
 	}
 
 	/**
@@ -1544,7 +1543,7 @@ export default class Game {
 		if(item) {
 			this.player.isLootMoving = true;
 			this.makePlayerGoTo(item.gridX, item.gridY);
-			this.client.sendLootMove(item, item.gridX, item.gridY);
+			connection.sendLootMove(item, item.gridX, item.gridY);
 		}
 	}
 
@@ -1570,7 +1569,7 @@ export default class Game {
 	 */
 	makePlayerAttack(mob) {
 		this.createAttackLink(this.player, mob);
-		this.client.sendAttack(mob);
+		connection.sendAttack(mob);
 	}
 
 	/**
@@ -1830,10 +1829,23 @@ export default class Game {
 		}
 	}
 
-	/**
-	 * 
-	 */
-	movecursor() {
+
+	showCursor() {
+		this.cursorVisible = true
+	}
+
+
+	hideCursor() {
+		this.cursorVisible = false
+
+		if(this.lastHovered) {
+			this.lastHovered.setHighlight(false)
+			this.lastHovered = null
+		}
+	}
+
+
+	moveCursor() {
 		var mouse = this.getMouseGridPosition(),
 			x = mouse.x,
 			y = mouse.y;
@@ -1863,6 +1875,7 @@ export default class Game {
 			}
 		}
 	}
+
 
 	/**
 	 * Processes game logic when the user triggers a click/touch event during the game.
@@ -2016,7 +2029,7 @@ export default class Game {
 					character.hit();
 					
 					if(character.id === this.playerId) {
-						this.client.sendHit(character.target);
+						connection.sendHit(character.target);
 					}
 					
 					if(character instanceof Player && this.camera.isVisible(character)) {
@@ -2024,7 +2037,7 @@ export default class Game {
 					}
 					
 					if(character.hasTarget() && character.target.id === this.playerId && this.player && !this.player.invincible) {
-						this.client.sendHurt(character);
+						connection.sendHurt(character);
 					}
 				}
 			} else {
@@ -2105,7 +2118,7 @@ export default class Game {
 			this.currentZoning = new Transition();
 		}
 		this.bubbleManager.clean();
-		this.client.sendZone();
+		connection.sendZone();
 	}
 	
 	enqueueZoningFrom(x, y) {
@@ -2146,7 +2159,7 @@ export default class Game {
 	}
 
 	say(message) {
-		this.client.sendChat(message);
+		connection.sendChat(message);
 	}
 
 	createBubble(id, message) {
@@ -2205,7 +2218,7 @@ export default class Game {
 		this.initPlayer()
 
 		this.started = true
-		this.client.enable()
+		connection.enable()
 		this.sendHello(hero.ident, hero.secret)
 
 		this.storage.incrementRevives()
@@ -2353,7 +2366,7 @@ export default class Game {
 			var lastCheckpoint = this.player.lastCheckpoint;
 			if(!lastCheckpoint || (lastCheckpoint && lastCheckpoint.id !== checkpoint.id)) {
 				this.player.lastCheckpoint = checkpoint;
-				this.client.sendCheck(checkpoint.id);
+				connection.sendCheck(checkpoint.id);
 			}
 		}
 	}

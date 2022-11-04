@@ -5,6 +5,7 @@ import Character from  './character'
 import * as Exceptions from  './exceptions'
 import {clone} from './util'
 import * as Types from '../../shared/gametypes'
+import connection from './connection'
 import {AllCharacterClasses, LEVEL_REQUIREMENTS, ATTR_POINTS_PER_LEVEL, getLevelFromExperience} from '../../shared/game'
 
 
@@ -317,9 +318,7 @@ export default class Player extends Character {
 			throw new Error('No attribute points left')
 		}
 		this.spentAttrPoints[attr] += 1
-
-		// rely on server to update our life and mana
-
+		connection.sendSpendAttr(attr[1] as AttrShort)
 		this.emit('update')
 	}
 
