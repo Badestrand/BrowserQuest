@@ -774,7 +774,7 @@ export default class Game {
 			let player = this.player
 
 			if(player && !player.isDead && !player.invincible) {
-				const isHurt = points <= player.getCurHitpoints()
+				const isHurt = points < player.getCurHitpoints()
 				const diff = points - player.getCurHitpoints()
 				player.setCurHitpoints(points)
 
@@ -793,11 +793,20 @@ export default class Game {
 			}
 		});
 	
-		this.client.onPlayerChangeMaxHitPoints((hp) => {
-			this.player.maxHitpoints = hp;
-			this.player.hitpoints = hp;
-			this.updateBars();
-		});
+		this.client.onPlayerChangeMaxHitpoints((points) => {
+			this.player.setMaxHitpoints(points)
+			this.updateBars()
+		})
+
+		this.client.onPlayerChangeCurMana((points, isRegen) => {
+			this.player.mana = points
+			this.updateBars()
+		})
+
+		this.client.onPlayerChangeMaxMana((points) => {
+			this.player.setMaxMana(points)
+			this.updateBars()
+		})
 	
 		this.client.onPlayerEquipItem((playerId, itemKind) => {
 			var player = this.getEntityById(playerId),

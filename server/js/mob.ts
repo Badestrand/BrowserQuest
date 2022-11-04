@@ -16,7 +16,7 @@ export default class Mob extends Character {
     constructor(id, kind, x, y) {
         super(id, "mob", kind, x, y);
         
-        this.updateHitPoints();
+        this.updateHitpoints();
         this.spawningX = x;
         this.spawningY = y;
         this.armorLevel = Properties.getArmorLevel(this.kind);
@@ -32,7 +32,7 @@ export default class Mob extends Character {
         this.isDead = true;
         this.hatelist = [];
         this.clearTarget();
-        this.updateHitPoints();
+        this.updateHitpoints();
         this.resetPosition();
         
         this.handleRespawn();
@@ -175,8 +175,8 @@ export default class Mob extends Character {
     }
 
 
-    updateHitPoints() {
-        this.resetHitPoints(Properties.getHitPoints(this.kind));
+    updateHitpoints() {
+        this.resetHitpoints(Properties.getHitpoints(this.kind));
     }
 
 

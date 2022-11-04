@@ -64,7 +64,7 @@ export default class Character extends Entity {
 		return this.maxHitpoints
 	}
 
-	setMaxHitPoints(hp) {
+	setMaxHitpoints(hp) {
 		this.maxHitpoints = hp;
 		this.hitpoints = hp;
 	}

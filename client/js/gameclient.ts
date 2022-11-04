@@ -43,7 +43,9 @@ export default class GameClient extends EventEmitter {
 		this.handlers[Types.Messages.LIST] = this.receiveList;
 		this.handlers[Types.Messages.DESTROY] = this.receiveDestroy;
 		this.handlers[Types.Messages.KILL] = this.receiveKill;
-		this.handlers[Types.Messages.HP] = this.receiveHitPoints;
+		this.handlers[Types.Messages.MAX_HITPOINTS] = this.receiveMaxHitpoints;
+		this.handlers[Types.Messages.MAX_MANA] = this.receiveMaxMana;
+		this.handlers[Types.Messages.MANA] = this.receiveMana;
 		this.handlers[Types.Messages.BLINK] = this.receiveBlink;
 		// this.handlers[Types.Messages.GAINEXP] = this.receiveExperience;
 	
@@ -227,7 +229,7 @@ export default class GameClient extends EventEmitter {
 		
 			if(character instanceof Player) {
 				character.weaponName = Types.getKindAsString(weapon);
-				character.spriteName = Types.getKindAsString(armor);
+				character.armorName = Types.getKindAsString(armor);
 			}
 		
 			if(this.spawn_character_callback) {
@@ -354,11 +356,21 @@ export default class GameClient extends EventEmitter {
 	}
 
 
-	receiveHitPoints(data) {
-		var maxHp = data[1];
-	
-		if(this.hp_callback) {
-			this.hp_callback(maxHp);
+	receiveMaxHitpoints(data) {
+		if(this.max_hitpoints_callback) {
+			this.max_hitpoints_callback(data[1])
+		}
+	}
+
+	receiveMaxMana(data) {
+		if(this.max_mana_callback) {
+			this.max_mana_callback(data[1])
+		}
+	}
+
+	receiveMana(data) {
+		if(this.mana_callback) {
+			this.mana_callback(data[1], Boolean(data[2]))
 		}
 	}
 
@@ -459,8 +471,16 @@ export default class GameClient extends EventEmitter {
 		this.destroy_callback = callback;
 	}
 
-	onPlayerChangeMaxHitPoints(callback) {
-		this.hp_callback = callback;
+	onPlayerChangeMaxHitpoints(callback) {
+		this.max_hitpoints_callback = callback;
+	}
+
+	onPlayerChangeMaxMana(callback) {
+		this.max_mana_callback = callback;
+	}
+
+	onPlayerChangeCurMana(callback) {
+		this.mana_callback = callback;
 	}
 
 
@@ -548,7 +568,9 @@ export default class GameClient extends EventEmitter {
 	public dmg_callback: any
 	public kill_callback: any
 	public list_callback: any
-	public hp_callback: any
+	public max_hitpoints_callback: any
+	public max_mana_callback: any
+	public mana_callback: any
 	public destroy_callback: any
 	public isTimeout: boolean
 }

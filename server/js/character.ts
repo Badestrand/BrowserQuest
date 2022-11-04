@@ -28,7 +28,7 @@ export default class Character extends Entity {
         return basestate.concat(state);
     }
     
-    resetHitPoints(maxHitpoints) {
+    resetHitpoints(maxHitpoints) {
         this.maxHitpoints = maxHitpoints;
         this.hitpoints = this.maxHitpoints;
     }
@@ -68,11 +68,11 @@ export default class Character extends Entity {
     }
     
     health() {
-        return new Messages.Health(this.hitpoints, false);
+        return new Messages.CurHitpoints(this.hitpoints, false);
     }
 
     regen() {
-        return new Messages.Health(this.hitpoints, true);
+        return new Messages.CurHitpoints(this.hitpoints, true);
     }
     
     addAttacker(entity) {

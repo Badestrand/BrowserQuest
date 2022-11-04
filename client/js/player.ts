@@ -14,18 +14,14 @@ export default class Player extends Character {
 	constructor(id: any, hero: HeroInfo) {
 		super(id, Types.Entities.WARRIOR)
 	
-		// Renderer
 		this.nameOffsetY = -10
-	
-		// sprites
-		this.spriteName = 'clotharmor'
-		this.weaponName = 'sword1'
-	
-		// modes
 		this.isLootMoving = false
 		this.isSwitchingWeapon = true
-
-
+	
+		// sprites
+		this.armorName = Types.getKindAsString(hero.armorId)
+		this.weaponName = Types.getKindAsString(hero.weaponId)
+	
 		const characterClassID = hero.charClassId
 		const charClass = _.findWhere(AllCharacterClasses, {id: characterClassID})
 		if (!charClass) {
@@ -35,12 +31,12 @@ export default class Player extends Character {
 		this.charClass = charClass
 		this.experience = hero.experience
 		this.spentAttrPoints = clone(hero.spentAttrPoints)
-		this.maxMana = this.curMana = this.charClass.mana
+		this.updateMaxLifeAndMana()
+		this.hitpoints = this.maxHitpoints
+		this.mana = this.maxMana
 		this.gold = 0
 		// this.equipment = {}
 		// this.storage = new ItemStorage(10, 5)
-		this.updateMaxLifeAndMana()
-		this.hitpoints = this.maxHitpoints
 	}
 
 
@@ -51,7 +47,7 @@ export default class Player extends Character {
 			if(this.currentArmorSprite) {
 				currentArmorName = this.currentArmorSprite.name;
 			} else {
-				currentArmorName = this.spriteName;
+				currentArmorName = this.armorName;
 			}
 
 			if(item.type === "armor") {
@@ -88,11 +84,11 @@ export default class Player extends Character {
 	}
 
 	getSpriteName() {
-		return this.spriteName;
+		return this.armorName;
 	}
 
 	setSpriteName(name) {
-		this.spriteName = name;
+		this.armorName = name;
 	}
 	
 	getArmorName() {
@@ -246,7 +242,7 @@ export default class Player extends Character {
 	public isSwitchingWeapon: boolean
 	public switchingWeapon: any
 	public weaponName: string
-	public spriteName: string
+	public armorName: string
 	public isLootMoving: boolean
 	public nameOffsetY: number
 
@@ -261,30 +257,6 @@ export default class Player extends Character {
 		return 99
 	}
 
-
-	// ...
-	// serialize(): any {
-	// 	return {
-	// 		weapon: this.getWeaponName(),
-	// 		armor: this.getSpriteName(),
-	// 		experience: this.experience,
-	// 		level: this.level,
-	// 		attrs: clone(this.spentAttrPoints),
-	// 		unspentAttrPoints: this.unspentAttrPoints,
-	// 	}
-	// }
-
-	// unserialize(data: any) {
-	// 	this.setSpriteName(data.armor)
-	// 	this.setWeaponName(data.weapon)
-	// 	this.name = data.name
-	// 	this.experience = data.experience
-	// 	this.level = data.level
-	// 	this.spentAttrPoints = clone(data.attrs)
-	// 	this.unspentAttrPoints = data.unspentAttrPoints
-	// 	console.log('loaded player:', this)
-	// 	this.emit('update')
-	// }
 
 	getName(): string {
 		return this.name
@@ -306,12 +278,6 @@ export default class Player extends Character {
 		const newLevel = getLevelFromExperience(this.experience)
 
 		if (newLevel > oldLevel) {
-			// this.unspentAttrPoints += ATTR_POINTS_PER_LEVEL
-			// TODO: New life and mana should come from server
-			// this.unspentSkillPoints += 1
-			// this.updateMaxLifeAndMana()
-			// this.curLife = this.maxHitpoints
-			// this.curMana = this.maxMana
 			this.emit('level-up')
 		}
 		this.emit('update')
@@ -352,17 +318,7 @@ export default class Player extends Character {
 		}
 		this.spentAttrPoints[attr] += 1
 
-		// re-calculate maxHitpoints and maxMana and make sure we don't lose life/mana from spending attribute points (because maxHitpoints/maxMana goes up and curLife/curMana doesn't)
-		// const prevMaxLife = this.maxHitpoints
-		// const prevMaxMana = this.maxMana
-		// this.updateMaxLifeAndMana()
-		// if (this.maxHitpoints !== prevMaxLife) {
-		// 	this.hitpoints += this.maxHitpoints - prevMaxLife
-		// }
-		// if (this.maxMana !== prevMaxMana) {
-		// 	this.curMana += this.maxMana - prevMaxMana
-		// }
-		// TODO: rely on server to update our life and mana
+		// rely on server to update our life and mana
 
 		this.emit('update')
 	}
@@ -373,8 +329,20 @@ export default class Player extends Character {
 		return this.maxMana
 	}
 
+	setMaxMana(points: number) {
+		this.maxMana = points
+		this.mana = Math.min(this.mana, this.maxMana)
+		this.emit('update')
+	}
+
+	setMaxHitpoints(points: number) {
+		this.maxHitpoints = points
+		this.hitpoints = Math.min(this.hitpoints, this.maxHitpoints)
+		this.emit('update')
+	}
+
 	getCurMana(): number {
-		return this.curMana
+		return this.mana
 	}
 
 	getAttackDamage(): [number, number] {
@@ -423,7 +391,7 @@ export default class Player extends Character {
 	private experience: number
 	private spentAttrPoints: {str: number, dex: number, vit: number, ene: number}
 	private maxMana: number
-	private curMana: number
+	private mana: number
 	private gold: number
 	// private equipment: {[slot: string]: Item}
 }

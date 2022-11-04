@@ -183,7 +183,7 @@ Properties.getMobExperience = function(kind) {
 	return Properties[Types.getKindAsString(kind)].exp
 }
 
-Properties.getHitPoints = function(kind) {
+Properties.getHitpoints = function(kind) {
 	return Properties[Types.getKindAsString(kind)].hp;
 };
 

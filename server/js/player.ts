@@ -100,12 +100,11 @@ export default class Player extends Character {
 		// more initialization
 		this.kind = Types.Entities.WARRIOR
 		this.orientation = Utils.randomOrientation()
-		this.updateHitPoints()
+		this.updateMaxLifeAndMana()
+		this.hitpoints = this.maxHitpoints
+		this.mana = this.maxMana
 		this.updatePosition()
 
-		// this.world.addPlayer(this)
-
-		// this.send([Types.Messages.WELCOME, this.id, this.x, this.y])
 		this.hasEnteredGame = true
 		this.isDead = false
 
@@ -113,7 +112,6 @@ export default class Player extends Character {
 		this.connection.listen((message) => {
 			var action = message[0]
 
-			log.debug("Received: " + message);
 			if(!check(message)) {
 				this.connection.close("Invalid "+Types.getMessageTypeAsString(action)+" message format: "+message);
 				return;
@@ -215,14 +213,15 @@ export default class Player extends Character {
 						this.world.removeEntity(item);
 						
 						if(kind === Types.Entities.FIREPOTION) {
-							this.updateHitPoints();
-							this.broadcast(this.equip(Types.Entities.FIREFOX));
+							this.hitpoints = this.maxHitpoints
+							this.broadcast(this.equip(Types.Entities.FIREFOX))
 							this.firepotionTimeout = setTimeout(() => {
-								this.broadcast(this.equip(this.armor)); // return to normal after 15 sec
-								this.firepotionTimeout = null;
-							}, 15000);
-							this.send(new Messages.HitPoints(this.maxHitpoints).serialize());
-						} else if(Types.isHealingItem(kind)) {
+								this.broadcast(this.equip(this.armor)) // return to normal after 15 sec
+								this.firepotionTimeout = null
+							}, 15000)
+							this.send(new Messages.MaxHitpoints(this.maxHitpoints))
+						}
+						else if(Types.isHealingItem(kind)) {
 							var amount;
 							
 							switch(kind) {
@@ -241,6 +240,7 @@ export default class Player extends Character {
 						} else if(Types.isArmor(kind) || Types.isWeapon(kind)) {
 							this.equipItem(item);
 							this.broadcast(this.equip(kind));
+							this.send(this.equip(kind));
 						}
 					}
 				}
@@ -273,11 +273,47 @@ export default class Player extends Character {
 			}
 			else if(action === Types.Messages.SPEND_ATTR) {
 				const attr = message[1]
-				if ((attr==='str' || attr==='dex' || attr==='vit' || attr==='ene') && this.getUnspentAttrPoints()>0) {
-					this.spendAttrPoint(attr)
-					this.world.pushToPlayer(this, this.health())
-					this.send(new Messages.HitPoints(this.maxHitpoints).serialize())
+				if (!(attr==='str' || attr==='dex' || attr==='vit' || attr==='ene')) {
+					throw new Error('Invalid attribute '+attr)
 				}
+				if (this.getUnspentAttrPoints() === 0) {
+					throw new Error('No attribute points left')
+				}
+
+				this.spentAttrPoints[attr] += 1
+
+				const before = {
+					hitpoints: this.hitpoints,
+					maxHitpoints: this.maxHitpoints,
+					mana: this.mana,
+					maxMana: this.maxMana,
+				}
+
+				// re-calculate maxHitpoints and maxMana and make sure we don't lose life/mana from spending attribute points (because maxHitpoints/maxMana goes up and curLife/curMana doesn't)
+				this.updateMaxLifeAndMana()
+				if (this.maxHitpoints !== before.maxHitpoints) {
+					this.hitpoints += this.maxHitpoints - before.maxHitpoints
+				}
+				if (this.maxMana !== before.maxMana) {
+					this.mana += this.maxMana - before.maxMana
+				}
+
+				// send updates
+				if (this.maxHitpoints !== before.maxHitpoints) {
+					this.send(new Messages.MaxHitpoints(this.maxHitpoints))
+				}
+				if (this.maxMana !== before.maxMana) {
+					this.send(new Messages.MaxMana(this.maxMana))
+				}
+				if (this.hitpoints !== before.hitpoints) {
+					this.send(new Messages.CurHitpoints(this.hitpoints, false))
+				}
+				if (this.mana !== before.mana) {
+					this.send(new Messages.CurMana(this.mana, false))
+				}
+
+				// update storage
+				this.saveToFile()
 			}
 			else {
 				if(this.message_callback) {
@@ -324,7 +360,7 @@ export default class Player extends Character {
 
 
 	send(message) {
-		this.connection.send(message);
+		this.connection.send(message.serialize())
 	}
 
 
@@ -430,14 +466,22 @@ export default class Player extends Character {
 	}
 
 
-	updateHitPoints() {
-		const level = this.getLevel()
-		const totalVit = this.charClass.attributes.vit + this.spentAttrPoints.vit
-		const totalHitpoints = this.charClass.life + level * this.charClass.lifePerLevel + this.charClass.lifePerVit * totalVit
-		// this.resetHitPoints(baseHitpoints)
-		this.maxHitpoints = totalHitpoints
-        this.hitpoints = totalHitpoints
+	updateMaxLifeAndMana() {
+		const level = getLevelFromExperience(this.experience)
+		this.maxHitpoints = this.charClass.life + this.charClass.lifePerVit*this.getTotalAttrPoints('vit') + level*this.charClass.lifePerLevel + this.sumEquipmentModifier('addLife')
+		this.maxMana = this.charClass.mana + this.charClass.manaPerEne*this.getTotalAttrPoints('ene') + level*this.charClass.manaPerLevel +this.sumEquipmentModifier('addMana')
 	}
+
+	getTotalAttrPoints(attr: string): number {
+		const modifierName = 'add'+attr[0].toUpperCase()+attr.substr(1)  // e.g. 'addDex' for 'dex'
+		return this.spentAttrPoints[attr] + this.charClass.attributes[attr] + this.sumEquipmentModifier(modifierName)
+	}
+
+	sumEquipmentModifier(prop): number {
+		// TODO: Go through equipped items and sum up prop of the items
+		return 0
+	}
+
 
 
 	updatePosition() {
@@ -500,19 +544,6 @@ export default class Player extends Character {
 	}
 
 
-	// serialize(): HeroInfo {
-	// 	return {
-	// 		ident: this.ident,
-	// 		secret: this.secret,
-	// 		name: this.name,
-	// 		armorId: this.armor,
-	// 		weaponId: this.weapon,
-	// 		charClassId: this.charClass.id,
-	// 		spentAttrPoints: this.spentAttrPoints,
-	// 		experience: this.experience,
-	// 	}
-	// }
-
 
 	getLevel(): number {
 		return getLevelFromExperience(this.experience)
@@ -531,29 +562,6 @@ export default class Player extends Character {
 		return totalAvailablePoints - totalSpentPoints
 	}
 
-
-	spendAttrPoint(attr: AttrShort) {
-		if (this.getUnspentAttrPoints() === 0) {
-			throw new Error('No attribute points left')
-		}
-		this.spentAttrPoints[attr] += 1
-
-		// re-calculate maxHitpoints and maxMana and make sure we don't lose life/mana from spending attribute points (because maxHitpoints/maxMana goes up and curLife/curMana doesn't)
-		const prevMaxLife = this.maxHitpoints
-		// console.log('prevMaxLife', prevMaxLife)
-		// const prevMaxMana = this.maxMana
-		this.updateHitPoints()
-		// console.log('newMaxLife', this.maxHitpoints)
-		if (this.maxHitpoints !== prevMaxLife) {
-			// console.log('adjusting', this.maxHitpoints - prevMaxLife)
-			this.hitpoints += this.maxHitpoints - prevMaxLife
-		}
-		// if (this.maxMana !== prevMaxMana) {
-		// 	this.curMana += this.maxMana - prevMaxMana
-		// }
-
-		this.saveToFile()
-	}
 
 
 	public lootmove_callback: any
@@ -581,4 +589,6 @@ export default class Player extends Character {
 	private charClass: CharacterClassInfo
 	private spentAttrPoints: AttrPointsInfo
 	private experience: number
+	private mana: number
+	private maxMana: number
 }

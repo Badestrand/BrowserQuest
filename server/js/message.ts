@@ -93,7 +93,7 @@ export class Attack extends Message {
 }
 
 
-export class Health extends Message {
+export class CurHitpoints extends Message {
 	constructor(points, isRegen) {
 		super()
 		this.points = points;
@@ -114,17 +114,52 @@ export class Health extends Message {
 }
 
 
-export class HitPoints extends Message {
+export class MaxHitpoints extends Message {
 	constructor(maxHitpoints) {
 		super()
 		this.maxHitpoints = maxHitpoints;
 	}
 
 	serialize() {
-		return [Types.Messages.HP, this.maxHitpoints];
+		return [Types.Messages.MAX_HITPOINTS, this.maxHitpoints];
 	}
 
 	public maxHitpoints: any
+}
+
+
+export class CurMana extends Message {
+	constructor(points, isRegen) {
+		super()
+		this.points = points;
+		this.isRegen = isRegen;
+	}
+
+	serialize() {
+		var health = [Types.Messages.MANA,
+					  this.points];
+		if(this.isRegen) {
+			health.push(1);
+		}
+		return health;
+	}
+
+	public points: any
+	public isRegen: any
+}
+
+
+export class MaxMana extends Message {
+	constructor(points) {
+		super()
+		this.points = points;
+	}
+
+	serialize() {
+		return [Types.Messages.MAX_MANA, this.points];
+	}
+
+	public points: any
 }
 
 
