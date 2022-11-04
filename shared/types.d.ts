@@ -2,29 +2,59 @@ type ItemType = 'weapon' | 'shield' | 'helmet' | 'body-armor'
 
 
 
-type ItemVariantInfo = {
-	type: string
+
+type MobVariantInfo = {
+	kind: number
+	key: string
+	drops: {[itemKey: string]: number}
+	hp: number
+	armor: number
+	weapon: number
+	exp: number
+}
+
+
+type WeaponVariantInfo = {
+	kind: number
+	key: string
 	name: string
-	requirements: {
-		level?: number
-		str?: number
-		dex?: number
-	}
-	durability?: number
-	rarity: 'Normal' | 'Exceptional' | 'Elite'
-	storageWidth: number
-	storageHeight: number
-	imageUrl: string
+	weaponLevel: number
 }
 
 
-type Item = {
-	type: ItemType
-	variant: ItemVariantInfo
-	model: {
-		mesh: THREE.Object3D
-	}
+
+type ArmorVariantInfo = {
+	kind: number
+	key: string
+	name: string
+	armorLevel: number
 }
+
+
+
+// type ItemVariantInfo = {
+// 	type: string
+// 	name: string
+// 	requirements: {
+// 		level?: number
+// 		str?: number
+// 		dex?: number
+// 	}
+// 	durability?: number
+// 	rarity: 'Normal' | 'Exceptional' | 'Elite'
+// 	storageWidth: number
+// 	storageHeight: number
+// 	imageUrl: string
+// }
+
+
+// type Item = {
+// 	type: ItemType
+// 	variant: ItemVariantInfo
+// 	model: {
+// 		mesh: THREE.Object3D
+// 	}
+// }
 
 
 type HeroInfo = {
@@ -32,8 +62,8 @@ type HeroInfo = {
 	secret: string  // TODO: erase from here
 
 	name: string
-	armorId: number
-	weaponId: number
+	armorKind: number
+	weaponKind: number
 	charClassId: string
 	spentAttrPoints: {
 		str: number
@@ -68,39 +98,39 @@ type HeroInfo = {
 
 
 
-type WeaponTypeName = 'spear-2h' | 'sword-1h' | 'sword-2h' | 'axe-1h' | 'axe-2h' | 'hammer-2h' | 'stick-1h' | 'bow'
+// type WeaponTypeName = 'spear-2h' | 'sword-1h' | 'sword-2h' | 'axe-1h' | 'axe-2h' | 'hammer-2h' | 'stick-1h' | 'bow'
 
-type WeaponVariantInfo = ItemVariantInfo & {
-	type: WeaponTypeName
-	hands: number
-	damage?: {from: number, to: number}
-	storageWidth: number
-	storageHeight: number
-}
-
-
+// type WeaponVariantInfo = ItemVariantInfo & {
+// 	type: WeaponTypeName
+// 	hands: number
+// 	damage?: {from: number, to: number}
+// 	storageWidth: number
+// 	storageHeight: number
+// }
 
 
-type ArmorTypeName = 'helmet' | 'body-armor' | 'shield'
-
-type ArmorVariantInfo = ItemVariantInfo & {
-	type: ArmorTypeName
-	defense: {from: number, to: number}
-}
 
 
-type BodyArmorVariantInfo = ArmorVariantInfo & {
-	power: 'Light' | 'Medium' | 'Heavy'
-}
+// type ArmorTypeName = 'helmet' | 'body-armor' | 'shield'
 
-type HelmetVariantInfo = ArmorVariantInfo & {
-	magicLevel?: number
-}
+// type ArmorVariantInfo = ItemVariantInfo & {
+// 	type: ArmorTypeName
+// 	defense: {from: number, to: number}
+// }
 
-type ShieldVariantInfo = ArmorVariantInfo & {
-	blockChance: number
-	power: 'Light' | 'Medium' | 'Heavy'
-}
+
+// type BodyArmorVariantInfo = ArmorVariantInfo & {
+// 	power: 'Light' | 'Medium' | 'Heavy'
+// }
+
+// type HelmetVariantInfo = ArmorVariantInfo & {
+// 	magicLevel?: number
+// }
+
+// type ShieldVariantInfo = ArmorVariantInfo & {
+// 	blockChance: number
+// 	power: 'Light' | 'Medium' | 'Heavy'
+// }
 
 
 

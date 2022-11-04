@@ -2207,6 +2207,7 @@ export default class Game {
 
 
 	restart(hero) {
+		throw new Error('Not implemented')
 		log.debug("Beginning restart")
 
 		this.entities = {}
@@ -2344,7 +2345,7 @@ export default class Game {
 	 * Also useful when the mouse is hovering a tile where an item is appearing.
 	 */
 	updateCursor() {
-		this.movecursor();
+		this.moveCursor();
 		this.updateCursorLogic();
 	}
 

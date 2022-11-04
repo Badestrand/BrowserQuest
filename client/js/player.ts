@@ -6,7 +6,7 @@ import * as Exceptions from  './exceptions'
 import {clone} from './util'
 import * as Types from '../../shared/gametypes'
 import connection from './connection'
-import {AllCharacterClasses, LEVEL_REQUIREMENTS, ATTR_POINTS_PER_LEVEL, getLevelFromExperience} from '../../shared/game'
+import {AllCharacterClasses, LEVEL_REQUIREMENTS, ATTR_POINTS_PER_LEVEL, getLevelFromExperience, getAttackRating, getDefenseRating} from '../../shared/game'
 
 
 
@@ -20,8 +20,8 @@ export default class Player extends Character {
 		this.isSwitchingWeapon = true
 	
 		// sprites
-		this.armorName = Types.getKindAsString(hero.armorId)
-		this.weaponName = Types.getKindAsString(hero.weaponId)
+		this.armorName = Types.getKindAsString(hero.armorKind)
+		this.weaponName = Types.getKindAsString(hero.weaponKind)
 	
 		const characterClassID = hero.charClassId
 		const charClass = _.findWhere(AllCharacterClasses, {id: characterClassID})
@@ -318,7 +318,7 @@ export default class Player extends Character {
 			throw new Error('No attribute points left')
 		}
 		this.spentAttrPoints[attr] += 1
-		connection.sendSpendAttr(attr[1] as AttrShort)
+		connection.sendSpendAttr(attr as AttrShort)
 		this.emit('update')
 	}
 
@@ -345,21 +345,16 @@ export default class Player extends Character {
 	}
 
 	getAttackDamage(): [number, number] {
-		// TODO
-		return [1, 2]
+		const weapon = Types.getWeaponVariantByKind(Types.getKindFromString(this.weaponName))
+		return Types.calcDamage(weapon.weaponLevel, this.getTotalAttrPoints('str'))
 	}
 
 	getAttackRating(): number {
-		// from https://d2.lc/AB/wiki/index49ee.html?title=Attack_Rating
-		const totalDex = this.getTotalAttrPoints('dex')
-		const baseATR = this.charClass.atr + (totalDex - this.charClass.attributes.dex) * 5
-		return baseATR
+		return getAttackRating(this.charClass, this.getTotalAttrPoints('dex'))
 	}
 
 	getDefenseRating(): number {
-		// from https://d2.lc/AB/wiki/index8959.html?title=Defense
-		const baseDef = this.getTotalAttrPoints('dex') / 4
-		return baseDef
+		return getDefenseRating(this.getTotalAttrPoints('dex'))
 	}
 
 	getResistance(source: 'fir'|'ice'|'lig'|'psn'): number {

@@ -715,14 +715,14 @@ export default class Renderer {
 
 
 
-	static getPlayerImage2(armorId, weaponId) {
+	static getPlayerImage2(armorKind, weaponKind) {
 		return new Promise((resolve, reject) => {
 			const canvas = document.createElement('canvas')
 			const ctx = canvas.getContext('2d')
 			const scale = 2
 
-			const armorSprite = new Sprite(Types.getDisplayName(armorId), scale)
-			const weaponSprite = new Sprite(Types.getDisplayName(weaponId), scale)
+			const armorSprite = new Sprite(Types.getDisplayName(armorKind), scale)
+			const weaponSprite = new Sprite(Types.getDisplayName(weaponKind), scale)
 			const shadowSprite = new Sprite('shadow16', scale)
 
 			Promise.all([armorSprite.promise, weaponSprite.promise, shadowSprite.promise]).then(() => {

@@ -75,6 +75,12 @@ module.exports = {
 	mode: 'development',
 	devtool: 'eval-source-map',
 
+	watchOptions: {
+		ignored: [
+			path.resolve(__dirname, 'img'),
+			path.resolve(__dirname, 'node_modules')
+		],
+	},
 	devServer: {
 		static: {
 			directory: path.join(__dirname, '.'),

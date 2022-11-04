@@ -110,7 +110,7 @@ function LoadCharacterScreen({onPlay, onReset, onHelp, data}: any) {
 	}
 
 	useEffect(() => {
-		Renderer.getPlayerImage2(data.armorId, data.weaponId).then(setImg)
+		Renderer.getPlayerImage2(data.armorKind, data.weaponKind).then(setImg)
 	}, [data.armor, data.weapon])
 
 	return (

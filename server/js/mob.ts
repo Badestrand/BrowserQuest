@@ -3,7 +3,6 @@ import * as _ from 'underscore'
 import * as log from './log'
 import * as Utils from './utils'
 import * as Messages from './message'
-import Properties from './properties'
 import ChestArea from './chestarea'
 import Character from './Character'
 import MobArea from './mobarea'
@@ -13,18 +12,17 @@ import * as Types from '../../shared/gametypes'
 
 
 export default class Mob extends Character {
-    constructor(id, kind, x, y) {
-        super(id, "mob", kind, x, y);
+    constructor(id: any, kind: number, x: number, y: number) {
+        super(id, "mob", kind, x, y)
+        this.variant = Types.getMobVariantByKind(kind)
         
-        this.updateHitpoints();
-        this.spawningX = x;
-        this.spawningY = y;
-        this.armorLevel = Properties.getArmorLevel(this.kind);
-        this.weaponLevel = Properties.getWeaponLevel(this.kind);
-        this.hatelist = [];
-        this.respawnTimeout = null;
-        this.returnTimeout = null;
-        this.isDead = false;
+        this.updateHitpoints()
+        this.spawningX = x
+        this.spawningY = y
+        this.hatelist = []
+        this.respawnTimeout = null
+        this.returnTimeout = null
+        this.isDead = false
     }
 
 
@@ -176,7 +174,7 @@ export default class Mob extends Character {
 
 
     updateHitpoints() {
-        this.resetHitpoints(Properties.getHitpoints(this.kind));
+        this.resetHitpoints(this.variant.hp)
     }
 
 
@@ -185,15 +183,14 @@ export default class Mob extends Character {
     }
 
 
-    public spawningX: any
-    public spawningY: any
-    public armorLevel: any
-    public weaponLevel: any
+    private variant: MobVariantInfo
+    public spawningX: number
+    public spawningY: number
     public hatelist: any
     public respawnTimeout: any
     public returnTimeout: any
-    public isDead: any
-    public area: any
+    public isDead: boolean
+    public area: MobArea
     public respawn_callback: any
     public move_callback: any
 }

@@ -12,7 +12,6 @@ import MobArea from './mobarea'
 import ChestArea from './chestarea'
 import Chest from './chest'
 import * as Messages from './message'
-import Properties from './properties'
 import * as Utils from './utils'
 import * as Types from '../../shared/gametypes'
 
@@ -58,17 +57,17 @@ export default class World {
 			}
 		});
 		
-		this.onRegenTick(function() {
-			self.forEachCharacter(function(character) {
-				if(!character.hasFullHealth()) {
-					character.regenHealthBy(Math.floor(character.maxHitpoints / 25));
+		// this.onRegenTick(function() {
+		// 	self.forEachCharacter(function(character) {
+		// 		if(!character.hasFullHealth()) {
+		// 			character.regenHealthBy(Math.floor(character.maxHitpoints / 25));
 			
-					if(character.type === 'player') {
-						self.pushToPlayer(character, character.regen());
-					}
-				}
-			});
-		});
+		// 			if(character.type === 'player') {
+		// 				self.pushToPlayer(character, character.regen());
+		// 			}
+		// 		}
+		// 	});
+		// });
 	}
 
 
@@ -521,7 +520,7 @@ export default class World {
 	
 	handleHurtEntity(entity, attacker, damage) {
 		var self = this;
-console.log('handleHurtEntity', entity.name, attacker.name, 'damage=', damage)
+
 		if(entity.type === 'player') {
 			// A player is only aware of his own hitpoints
 			this.pushToPlayer(entity, entity.health());
@@ -537,7 +536,7 @@ console.log('handleHurtEntity', entity.name, attacker.name, 'damage=', damage)
 			if(entity.type === "mob") {
 				var mob = entity
 				var item = this.getDroppedItem(mob)
-				const exp = Properties.getMobExperience(mob.kind)
+				const exp = mob.variant.exp
 				this.pushToPlayer(attacker, new Messages.Kill(mob, exp))
 				attacker.addExperience(exp)
 				this.pushToAdjacentGroups(mob.group, mob.despawn()); // Despawn must be enqueued before the item drop
@@ -635,15 +634,12 @@ console.log('handleHurtEntity', entity.name, attacker.name, 'damage=', damage)
 	}
 	
 	getDroppedItem(mob) {
-		var kind = Types.getKindAsString(mob.kind)
-		var drops = Properties[kind].drops
 		var v = Utils.random(100),
 			p = 0,
 			item = null;
-		
-		for(var itemName in drops) {
-			var percentage = drops[itemName];
-			
+
+		for(var itemName in mob.variant.drops) {
+			const percentage = mob.variant.drops[itemName]
 			p += percentage;
 			if(v <= p) {
 				item = this.addItem(this.createItem(Types.getKindFromString(itemName), mob.x, mob.y));

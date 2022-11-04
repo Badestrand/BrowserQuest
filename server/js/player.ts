@@ -6,11 +6,9 @@ import {socketIOConnection} from './ws'
 import * as log from './log'
 import * as Messages from './message'
 import * as Utils from './utils'
-import Properties from './properties'
 import Character from './character'
 import Chest from './chest'
 import World from './worldserver'
-import * as Formulas from './formulas'
 import check from './format'
 import * as Types from '../../shared/gametypes'
 import {AllCharacterClasses, getLevelFromExperience, ATTR_POINTS_PER_LEVEL} from '../../shared/game'
@@ -37,8 +35,26 @@ function createToken(prefix: string, length: number): string {
 }
 
 
-const INITIAL_ARMOR_ID = Types.getKindFromString('clotharmor')
-const INITIAL_WEAPON_ID = Types.getKindFromString('sword1')
+
+
+class Weapon {
+	constructor(variant: WeaponVariantInfo) {
+		this.variant = variant
+	}
+
+	public variant: WeaponVariantInfo
+}
+
+
+
+
+class Armor {
+	constructor(variant: ArmorVariantInfo) {
+		this.variant = variant
+	}
+
+	public variant: ArmorVariantInfo
+}
 
 
 
@@ -59,8 +75,8 @@ export default class Player extends Character {
 			ident: ident,
 			secret: secret,
 			name: cleanName,
-			armorId: INITIAL_ARMOR_ID,
-			weaponId: INITIAL_WEAPON_ID,
+			armorKind: Types.INITIAL_ARMOR_KIND,
+			weaponKind: Types.INITIAL_WEAPON_KIND,
 			charClassId,
 			spentAttrPoints: {
 				str: 0,
@@ -94,8 +110,8 @@ export default class Player extends Character {
 		this.charClass = _.findWhere(AllCharacterClasses, {id: heroInfo.charClassId})
 		this.spentAttrPoints = heroInfo.spentAttrPoints
 		this.experience = heroInfo.experience
-		this.armor = heroInfo.armorId
-		this.weapon = heroInfo.weaponId
+		this.armor = new Armor(Types.getArmorVariantByKind(heroInfo.armorKind))
+		this.weapon = new Weapon(Types.getWeaponVariantByKind(heroInfo.weaponKind))
 
 		// more initialization
 		this.kind = Types.Entities.WARRIOR
@@ -123,10 +139,10 @@ export default class Player extends Character {
 				message.shift();
 				this.world.pushSpawnsToPlayer(this, message);
 			}
-			else if(action === Types.Messages.ZONE) {
+			else if (action === Types.Messages.ZONE) {
 				this.zone_callback();
 			}
-			else if(action === Types.Messages.CHAT) {
+			else if (action === Types.Messages.CHAT) {
 				var msg = Utils.sanitize(message[1]);
 				
 				// Sanitized messages may become empty. No need to broadcast empty chat messages.
@@ -135,7 +151,7 @@ export default class Player extends Character {
 					this.broadcastToZone(new Messages.Chat(this, msg), false);
 				}
 			}
-			else if(action === Types.Messages.MOVE) {
+			else if (action === Types.Messages.MOVE) {
 				if(this.move_callback) {
 					var x = message[1],
 						y = message[2];
@@ -149,7 +165,7 @@ export default class Player extends Character {
 					}
 				}
 			}
-			else if(action === Types.Messages.LOOTMOVE) {
+			else if (action === Types.Messages.LOOTMOVE) {
 				if(this.lootmove_callback) {
 					this.setPosition(message[1], message[2]);
 					
@@ -162,12 +178,12 @@ export default class Player extends Character {
 					}
 				}
 			}
-			else if(action === Types.Messages.AGGRO) {
+			else if (action === Types.Messages.AGGRO) {
 				if(this.move_callback) {
 					this.world.handleMobHate(message[1], this.id, 5);
 				}
 			}
-			else if(action === Types.Messages.ATTACK) {
+			else if (action === Types.Messages.ATTACK) {
 				var mob = this.world.getEntityById(message[1]);
 				
 				if(mob) {
@@ -175,12 +191,11 @@ export default class Player extends Character {
 					this.world.broadcastAttacker(this);
 				}
 			}
-			else if(action === Types.Messages.HIT) {
+			else if (action === Types.Messages.HIT) {
 				var mob = this.world.getEntityById(message[1]);
 
 				if(mob) {
-					var dmg = Formulas.dmg(Properties.getWeaponLevel(this.weapon), mob.armorLevel);
-					
+					const dmg = Types.dmg(this.weapon.variant.weaponLevel, this.getTotalAttrPoints('str'), mob.variant.armor)
 					if(dmg > 0) {
 						mob.receiveDamage(dmg, this.id);
 						this.world.handleMobHate(mob.id, this.id, dmg);
@@ -188,12 +203,12 @@ export default class Player extends Character {
 					}
 				}
 			}
-			else if(action === Types.Messages.HURT) {
+			else if (action === Types.Messages.HURT) {
 				var mob = this.world.getEntityById(message[1]);
 				if(mob && this.hitpoints > 0) {
-					this.hitpoints -= Formulas.dmg(mob.weaponLevel, Properties.getArmorLevel(this.armor));
+					const dmg = Types.dmg(mob.variant.weapon, null, this.armor.variant.armorLevel);
+					this.hitpoints -= dmg
 					this.world.handleHurtEntity(this, mob);
-					
 					if(this.hitpoints <= 0) {
 						this.isDead = true;
 						if(this.firepotionTimeout) {
@@ -202,7 +217,7 @@ export default class Player extends Character {
 					}
 				}
 			}
-			else if(action === Types.Messages.LOOT) {
+			else if (action === Types.Messages.LOOT) {
 				var item = this.world.getEntityById(message[1]);
 				
 				if(item) {
@@ -216,7 +231,7 @@ export default class Player extends Character {
 							this.hitpoints = this.maxHitpoints
 							this.broadcast(this.equip(Types.Entities.FIREFOX))
 							this.firepotionTimeout = setTimeout(() => {
-								this.broadcast(this.equip(this.armor)) // return to normal after 15 sec
+								this.broadcast(this.equip(this.armor.variant.kind)) // return to normal after 15 sec
 								this.firepotionTimeout = null
 							}, 15000)
 							this.send(new Messages.MaxHitpoints(this.maxHitpoints))
@@ -245,7 +260,7 @@ export default class Player extends Character {
 					}
 				}
 			}
-			else if(action === Types.Messages.TELEPORT) {
+			else if (action === Types.Messages.TELEPORT) {
 				var x = message[1],
 					y = message[2];
 				
@@ -259,19 +274,19 @@ export default class Player extends Character {
 					this.world.pushRelevantEntityListTo(this);
 				}
 			}
-			else if(action === Types.Messages.OPEN) {
+			else if (action === Types.Messages.OPEN) {
 				var chest = this.world.getEntityById(message[1]);
 				if(chest && chest instanceof Chest) {
 					this.world.handleOpenedChest(chest, this);
 				}
 			}
-			else if(action === Types.Messages.CHECK) {
+			else if (action === Types.Messages.CHECK) {
 				var checkpoint = this.world.map.getCheckpoint(message[1]);
 				if(checkpoint) {
 					this.lastCheckpoint = checkpoint;
 				}
 			}
-			else if(action === Types.Messages.SPEND_ATTR) {
+			else if (action === Types.Messages.SPEND_ATTR) {
 				const attr = message[1]
 				if (!(attr==='str' || attr==='dex' || attr==='vit' || attr==='ene')) {
 					throw new Error('Invalid attribute '+attr)
@@ -316,7 +331,7 @@ export default class Player extends Character {
 				this.saveToFile()
 			}
 			else {
-				if(this.message_callback) {
+				if (this.message_callback) {
 					this.message_callback(message);
 				}
 			}
@@ -335,12 +350,12 @@ export default class Player extends Character {
 
 
 	destroy() {
-		this.forEachAttacker(function(mob) {
+		this.forEachAttacker((mob) => {
 			mob.clearTarget();
 		});
 		this.attackers = {};
 		
-		this.forEachHater(function(mob) {
+		this.forEachHater((mob) => {
 			mob.forgetPlayer(this.id);
 		});
 		this.haters = {};
@@ -349,7 +364,7 @@ export default class Player extends Character {
 
 	getState() {
 		var basestate = this._getBaseState(),
-			state = [this.name, this.orientation, this.armor, this.weapon];
+			state = [this.name, this.orientation, this.armor.variant.kind, this.weapon.variant.kind];
 
 		if(this.target) {
 			state.push(this.target);
@@ -435,20 +450,20 @@ export default class Player extends Character {
 
 
 	forEachHater(callback) {
-		_.each(this.haters, function(mob) {
+		_.each(this.haters, (mob) => {
 			callback(mob);
 		});
 	}
 
 
 	equipArmor(kind) {
-		this.armor = kind
+		this.armor = new Armor(Types.getArmorVariantByKind(kind))
 		this.saveToFile()
 	}
 
 
 	equipWeapon(kind) {
-		this.weapon = kind
+		this.weapon = new Weapon(Types.getWeaponVariantByKind(kind))
 		this.saveToFile()
 	}
 
@@ -519,8 +534,8 @@ export default class Player extends Character {
 			charClassId: this.charClass.id,
 			spentAttrPoints: this.spentAttrPoints,
 			experience: this.experience,
-			armorId: this.armor,
-			weaponId: this.weapon,
+			armorKind: this.armor.variant.kind,
+			weaponKind: this.weapon.variant.kind,
 		}
 		fs.writeFileSync(getFilePath(this.ident), JSON.stringify(data, null, 4), 'utf8')
 	}
@@ -531,16 +546,7 @@ export default class Player extends Character {
 		if (secret !== data.secret) {
 			return null
 		}
-		return {
-			ident,
-			secret,
-			name: data.name,
-			armorId: data.armorId,
-			weaponId: data.weaponId,
-			charClassId: data.charClassId,
-			spentAttrPoints: data.spentAttrPoints,
-			experience: data.experience,
-		}
+		return data
 	}
 
 
@@ -574,8 +580,8 @@ export default class Player extends Character {
 	public requestpos_callback: any
 	public firepotionTimeout: any
 	public name: any
-	public armor: any
-	public weapon: any
+	public armor: Armor
+	public weapon: Weapon
 	public world: any
 	public connection: any
 	public hasEnteredGame: any

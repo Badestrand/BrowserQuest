@@ -160,6 +160,103 @@ var kinds = {
 	}
 }
 
+
+const AllWeaponVariants: Array<WeaponVariantInfo> = [{
+	kind: Entities.SWORD1,
+	key: 'sword1',
+	name: 'Wooden sword',
+	weaponLevel: 1
+}, {
+	kind: Entities.SWORD2,
+	key: 'sword2',
+	name: 'Iron sword',
+	weaponLevel: 2
+}, {
+	kind: Entities.AXE,
+	key: 'axe',
+	name: 'Axe',
+	weaponLevel: 3
+}, {
+	kind: Entities.MORNINGSTAR,
+	key: 'morningstar',
+	name: 'Morning Star',
+	weaponLevel: 4
+}, {
+	kind: Entities.BLUESWORD,
+	key: 'bluesword',
+	name: 'Crystal Sword',
+	weaponLevel: 5
+}, {
+	kind: Entities.REDSWORD,
+	key: 'redsword',
+	name: 'Flame Sword',
+	weaponLevel: 6
+}, {
+	kind: Entities.GOLDENSWORD,
+	key: 'goldensword',
+	name: 'Golden Sword',
+	weaponLevel: 7
+}]
+
+
+export function getWeaponVariantByKind(kind: number): WeaponVariantInfo {
+	for (const variant of AllWeaponVariants) {
+		if (variant.kind === kind) {
+			return variant
+		}
+	}
+	throw new Error('Weapon variant '+kind+' not found')
+}
+
+
+
+
+
+const AllArmorVariants: Array<ArmorVariantInfo> = [{
+	kind: Entities.CLOTHARMOR,
+	key: 'clotharmor',
+	name: 'Cloth Armor',
+	armorLevel: 1,
+}, {
+	kind: Entities.LEATHERARMOR,
+	key: 'leatherarmor',
+	name: 'Leather Armor',
+	armorLevel: 2,
+}, {
+	kind: Entities.MAILARMOR,
+	key: 'mailarmor',
+	name: 'Mail Armor',
+	armorLevel: 3,
+}, {
+	kind: Entities.PLATEARMOR,
+	key: 'platearmor',
+	name: 'Plate Armor',
+	armorLevel: 4,
+}, {
+	kind: Entities.REDARMOR,
+	key: 'redarmor',
+	name: 'Red Armor',
+	armorLevel: 5,
+}, {
+	kind: Entities.GOLDENARMOR,
+	key: 'goldenarmor',
+	name: 'Golden Armor',
+	armorLevel: 6,
+}]
+
+
+export function getArmorVariantByKind(kind: number): ArmorVariantInfo {
+	for (const variant of AllArmorVariants) {
+		if (variant.kind === kind) {
+			return variant
+		}
+	}
+	throw new Error('Armor variant '+kind+' not found')
+}
+
+
+
+
 const rankedWeapons = [
 	Entities.SWORD1,
 	Entities.SWORD2,
@@ -303,14 +400,7 @@ export function getOrientationAsString(orientation) {
 	}
 };
 
-// getRandomItemKind = function(item) {
-//     var all = this.rankedWeapons.concat(this.rankedArmors)
-//     var forbidden = [Entities.SWORD1, Entities.CLOTHARMOR],
-//     var itemKinds = _.difference(all, forbidden),
-//     var i = Math.floor(Math.random() * itemKinds.length);
-	
-//     return itemKinds[i];
-// };
+
 
 export function getMessageTypeAsString(type) {
 	var typeName;
@@ -324,14 +414,241 @@ export function getMessageTypeAsString(type) {
 		typeName = "UNKNOWN";
 	}
 	return typeName;
-};
+}
+
+
+
+
+
+
+
+
+
+const AllMobVariants: Array<MobVariantInfo> = [{
+	kind: Entities.RAT,
+	key: 'rat',
+	drops: {
+		flask: 40,
+		burger: 10,
+		firepotion: 5
+	},
+	hp: 25,
+	armor: 1,
+	weapon: 1,
+	exp: 25,
+}, {
+	kind: Entities.CRAB,
+	key: 'crab',
+	drops: {
+		flask: 50,
+		axe: 20,
+		leatherarmor: 10,
+		firepotion: 5
+	},
+	hp: 60,
+	armor: 2,
+	weapon: 1,
+	exp: 60,
+}, {
+	kind: Entities.BAT,
+	key: 'bat',
+	drops: {
+		flask: 50,
+		axe: 10,
+		firepotion: 5
+	},
+	hp: 80,
+	armor: 2,
+	weapon: 1,
+	exp: 80,
+}, {
+	kind: Entities.GOBLIN,
+	key: 'goblin',
+	drops: {
+		flask: 50,
+		leatherarmor: 20,
+		axe: 10,
+		firepotion: 5
+	},
+	hp: 90,
+	armor: 2,
+	weapon: 1,
+	exp: 90,
+}, {
+	kind: Entities.WIZARD,
+	key: 'wizard',
+	drops: {
+		flask: 50,
+		platearmor: 20,
+		firepotion: 5
+	},
+	hp: 100,
+	armor: 2,
+	weapon: 6,
+	exp: 100,
+}, {
+	kind: Entities.SKELETON,
+	key: 'skeleton',
+	drops: {
+		flask: 40,
+		mailarmor: 10,
+		axe: 20,
+		firepotion: 5
+	},
+	hp: 110,
+	armor: 2,
+	weapon: 2,
+	exp: 110,
+}, {
+	kind: Entities.SNAKE,
+	key: 'snake',
+	drops: {
+		flask: 50,
+		mailarmor: 10,
+		morningstar: 10,
+		firepotion: 5
+	},
+	hp: 150,
+	armor: 3,
+	weapon: 2,
+	exp: 150,
+}, {
+	kind: Entities.OGRE,
+	key: 'ogre',
+	drops: {
+		burger: 10,
+		flask: 50,
+		platearmor: 20,
+		morningstar: 20,
+		firepotion: 5
+	},
+	hp: 200,
+	armor: 3,
+	weapon: 2,
+	exp: 200,
+}, {
+	kind: Entities.SKELETON2,
+	key: 'skeleton2',
+	drops: {
+		flask: 60,
+		platearmor: 15,
+		bluesword: 15,
+		firepotion: 5
+	},
+	hp: 200,
+	armor: 3,
+	weapon: 3,
+	exp: 200,
+}, {
+	kind: Entities.EYE,
+	key: 'eye',
+	drops: {
+		flask: 50,
+		redarmor: 20,
+		redsword: 10,
+		firepotion: 5
+	},
+	hp: 200,
+	armor: 3,
+	weapon: 3,
+	exp: 200,
+}, {
+	kind: Entities.SPECTRE,
+	key: 'spectre',
+	drops: {
+		flask: 30,
+		redarmor: 40,
+		redsword: 30,
+		firepotion: 5
+	},
+	hp: 250,
+	armor: 2,
+	weapon: 4,
+	exp: 250,
+}, {
+	kind: Entities.DEATHKNIGHT,
+	key: 'deathknight',
+	drops: {
+		burger: 95,
+		firepotion: 5
+	},
+	hp: 250,
+	armor: 3,
+	weapon: 3,
+	exp: 250,
+}, {
+	kind: Entities.BOSS,
+	key: 'boss',
+	drops: {
+		goldensword: 100
+	},
+	hp: 700,
+	armor: 6,
+	weapon: 7,
+	exp: 700,
+}]
+
+
+export function getMobVariantByKind(kind: number): MobVariantInfo {
+	for (const variant of AllMobVariants) {
+		if (variant.kind === kind) {
+			return variant
+		}
+	}
+	throw new Error('Mob variant '+kind+' not found')
+}
+
+
+
+
+
+function randomInt(min, max) {
+    return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+
+export function calcDamage(weaponLevel: number, strength: number): [number, number] {
+	const base = weaponLevel + strength
+	return [base, base*2]
+}
+
+
+export function dmg(weaponLevel: number, strength: number, armorLevel: number): number {
+	if (strength === null) {
+		strength = weaponLevel * 5  // for mobs
+	}
+
+	const damageRange = calcDamage(weaponLevel, strength)
+	const damageDealt = randomInt(damageRange[0], damageRange[1])
+
+	const dealt = randomInt(damageRange[0], damageRange[1])  //weaponLevel * randomInt(5, 10),
+	const absorbed = armorLevel * randomInt(1, 3)
+	const dmg =  dealt - absorbed
+	
+	//console.log("abs: "+absorbed+"   dealt: "+ dealt+"   dmg: "+ (dealt - absorbed));
+	if(dmg <= 0) {
+		return randomInt(0, 3);
+	} else {
+		return dmg;
+	}
+}
+
+
+
+const INITIAL_ARMOR_KIND = Entities.CLOTHARMOR
+const INITIAL_WEAPON_KIND = Entities.SWORD1
+
+
+
 
 
 export {
+	INITIAL_ARMOR_KIND,
+	INITIAL_WEAPON_KIND,
 	Messages,
 	Entities,
 	Orientations,
 	kinds,
-	rankedWeapons,
-	rankedArmors,
+	AllMobVariants,
+	AllWeaponVariants,
 }

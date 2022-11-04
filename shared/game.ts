@@ -12,7 +12,8 @@ const AllCharacterClasses: Array<CharacterClassInfo> = [{
 	life: 55,
 	mana: 10,
 	stam: 92,
-	atr: 85,
+	atr: 20,
+	// atr: 85,
 
 	lifePerLevel: 2.0,
 	manaPerLevel: 1.0,
@@ -32,7 +33,8 @@ const AllCharacterClasses: Array<CharacterClassInfo> = [{
 	life: 50,
 	mana: 15,
 	stam: 84,
-	atr: 95,
+	atr: 5,
+	// atr: 95,
 
 	lifePerLevel: 1.0,
 	manaPerLevel: 1.5,
@@ -52,7 +54,8 @@ const AllCharacterClasses: Array<CharacterClassInfo> = [{
 	life: 40,
 	mana: 35,
 	stam: 74,
-	atr: 75,
+	atr: -15,
+	// atr: 75,
 
 	lifePerLevel: 1.0,
 	manaPerLevel: 2.0,
@@ -88,6 +91,38 @@ export function getLevelFromExperience(exp: number): number {
 // for (const n of [0, 100, 500, 1000, 1500, 10000]) {
 // 	console.log(n, getLevelFromExperience(n))
 // }
+
+
+export function getAttackRating(charClass: CharacterClassInfo, totalDex: number): number {
+	// from https://d2.lc/AB/wiki/index49ee.html?title=Attack_Rating
+	return (totalDex - 7) * 5 + charClass.atr
+}
+
+
+export function getDefenseRating(totalDex: number): number {
+	// from https://d2.lc/AB/wiki/index8959.html?title=Defense
+	return totalDex / 4
+}
+
+
+export function getChanceToHit(attackerLevel: number, attackerAttackRating: number, defenderLevel: number, defenderDefenseRating: number): number {  // returns [0..1]
+	// from https://d2.lc/AB/wiki/indexd836.html?title=Attack#Chance_to_hit
+	// % Chance to hit = 100 * 2 * (alvl / (alvl+dlvl) ) * (AR / (AR+DR) )
+	// alvl=attacker level; dlvl=defender level; AR=attacker Attack Rating; DR=defender Defense rating.
+	// Chance to hit has a 5% floor and 95% ceiling, so there is always at least 5% chance to hit, or miss. 
+	// However, when a player character is running attacks always hit.
+	const base = 2 * (attackerLevel / (attackerLevel + defenderLevel)) * (attackerAttackRating / (attackerAttackRating + defenderDefenseRating))
+	return Math.max(0.05, Math.min(0.95, base))
+}
+
+
+export function getBlockChance(): number {
+	// https://diablo2.diablowiki.net/Blocking
+	// TODO
+	throw new Error('Not implemented')
+}
+
+
 
 
 export {

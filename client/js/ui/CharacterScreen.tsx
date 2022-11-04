@@ -66,7 +66,7 @@ export default function CharacterScreen({game, player, onClose}: {game: Game, pl
 							<>
 								<div>
 									<span>Attack damage</span>
-									<span>{player.getAttackDamage()}</span>
+									<span>{player.getAttackDamage()[0]} - {player.getAttackDamage()[1]}</span>
 								</div>
 							</>
 							)}
