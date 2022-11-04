@@ -1,3 +1,4 @@
+.env
 node_modules
 client-build
 build.txt
@@ -6,3 +7,5 @@ config_local*
 client/audio/music
 .DS_Store
 *.swp
+server/worlddata/*
+!server/worlddata/.gitkeep

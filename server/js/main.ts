@@ -1,10 +1,12 @@
 import * as fs from 'fs'
+// import WebSocket from 'ws'
 import * as path from 'path'
 import * as _ from 'underscore'
 import {fileURLToPath} from 'url'
+import * as dotenv from 'dotenv'
+import {JSONRPCServerAndClient, JSONRPCClient, JSONRPCServer} from 'json-rpc-2.0'
 
 import * as log from './log'
-import Metrics from './metrics'
 import Player from './player'
 import WorldServer from './worldserver'
 import * as ws from './ws'
@@ -13,141 +15,140 @@ import * as ws from './ws'
 
 
 function main(config) {
-    var server = new ws.socketIOServer(config.host, config.port, config.clientUrl),
-        metrics = config.metrics_enabled ? new Metrics(config) : null,
-        worlds = [],
-        lastTotalPlayers = 0,
-        checkPopulationInterval = setInterval(function() {
-            if(metrics && metrics.isReady) {
-                metrics.getTotalPlayers(function(totalPlayers) {
-                    if(totalPlayers !== lastTotalPlayers) {
-                        lastTotalPlayers = totalPlayers;
-                        _.each(worlds, function(world) {
-                            world.updatePopulation(totalPlayers);
-                        });
-                    }
-                });
-            }
-        }, 1000);
+	const server = new ws.socketIOServer(config.host, config.port, config.clientUrl)
+	const worlds = []
+	let lastTotalPlayers = 0
+	log.setLevel(config.debug_level)
 
-    log.setLevel(config.debug_level)
-    
-    log.info("Starting BrowserQuest game server...");
-    
-    server.onConnect(function(connection) {
-        var world, // the one in which the player will be spawned
-            connect = function() {
-                if(world) {
-                    world.connect_callback(new Player(connection, world));
-                }
-            };
-        
-        if(metrics) {
-            metrics.getOpenWorldCount(function(open_world_count) {
-                // choose the least populated world among open worlds
-                world = _.min(_.first(worlds, open_world_count), function(w) { return w.playerCount; });
-                connect();
-            });
-        }
-        else {
-            // simply fill each world sequentially until they are full
-            world = _.detect(worlds, function(world) {
-                return world.playerCount < config.nb_players_per_world;
-            });
-            world.updatePopulation();
-            connect();
-        }
-    });
+	log.info("Starting BrowserQuest game server...");
 
-    server.onError(function() {
-        log.error(Array.prototype.join.call(arguments, ", "));
-    });
-    
-    var onPopulationChange = function() {
-        metrics.updatePlayerCounters(worlds, function(totalPlayers) {
-            _.each(worlds, function(world) {
-                world.updatePopulation(totalPlayers);
-            });
-        });
-        metrics.updateWorldDistribution(getWorldDistribution(worlds));
-    };
+	// {
+	//  // raw websockets test, see https://masteringjs.io/tutorials/node/websockets
+	// 	const server = new WebSocket.Server({port: 8006})
+	// 	let sockets = []
+	// 	server.on('connection', (socket) => {
+	// 		sockets.push(socket)
+	//
+	// 		// When you receive a message, send that message to every socket.
+	// 		socket.on('message', (msg) => {
+	// 			sockets.forEach(s => s.send(msg))
+	// 		})
+	// 		// When a socket closes, or disconnects, remove it from the array.
+	// 		socket.on('close', () => {
+	// 			sockets = sockets.filter(s => s !== socket);
+	// 		})
+	// 	})
+	// }
 
-    _.each(_.range(config.nb_worlds), function(i) {
-        var world = new WorldServer('world'+ (i+1), config.nb_players_per_world, server);
-        world.run(config.map_filepath);
-        worlds.push(world);
-        if(metrics) {
-            world.onPlayerAdded(onPopulationChange);
-            world.onPlayerRemoved(onPopulationChange);
-        }
-    });
-    
-    server.onRequestStatus(function() {
-        return JSON.stringify(getWorldDistribution(worlds));
-    });
-    
-    if(config.metrics_enabled) {
-        metrics.ready(function() {
-            onPopulationChange(); // initialize all counters to 0 when the server starts
-        });
-    }
-    
-    process.on('uncaughtException', function (e) {
-        log.error('uncaughtException: ' + e);
-    });
+
+	server.onConnect((connection) => {
+		const rpc = new JSONRPCServerAndClient(
+			new JSONRPCServer(),
+			new JSONRPCClient(async (request) => {
+				try {
+					connection._connection.emit('rpc', JSON.stringify(request))
+				}
+				catch (error) {
+					// return new Promise.reject(error)
+				}
+			})
+		)
+		connection._connection.on('rpc', (message) => {
+			rpc.receiveAndSend(JSON.parse(message))
+		})
+
+		rpc.addMethod('previewPlayer', ({ident, secret}: {ident: string, secret: string}) => {
+			const heroInfo = Player.tryLoad(ident, secret)
+			return heroInfo
+		})
+
+		rpc.addMethod('createPlayer', ({charClassId, name}: {charClassId: string, name: string}) => {
+			const heroInfo = Player.create(charClassId, name)
+			return heroInfo
+		})
+
+		rpc.addMethod('enter', ({ident, secret}: {ident: string, secret: string}) => {
+			const heroInfo = Player.tryLoad(ident, secret)
+			if (!heroInfo) {
+				throw new Error('Invalid data')
+			}
+
+			// simply fill each world sequentially until they are full
+			const world = _.detect(worlds, (world) => world.playerCount < config.nb_players_per_world)
+			world.updatePopulation()
+
+			const player = new Player(heroInfo, connection, world)
+			log.info('Player '+ident+' entered with id '+player.id+'.')
+
+			world.addPlayer(player)
+
+			return {
+				hero: heroInfo,
+				id: player.id,
+				x: player.x,
+				y: player.y,
+			}
+		})
+	})
+
+
+	server.onError(function() {
+		log.error(Array.prototype.join.call(arguments, ", "));
+	});
+
+
+	_.each(_.range(config.nb_worlds), function(i) {
+		var world = new WorldServer('world'+ (i+1), config.nb_players_per_world, server);
+		world.run(config.map_filepath);
+		worlds.push(world);
+	});
+
+
+	server.onRequestStatus(() => JSON.stringify(getWorldDistribution(worlds)))
+
+
+	process.on('uncaughtException', function (e) {
+		log.error('uncaughtException: ' + e);
+	});
 }
+
+
+
 
 function getWorldDistribution(worlds) {
-    var distribution = [];
-    
-    _.each(worlds, function(world) {
-        distribution.push(world.playerCount);
-    });
-    return distribution;
+	var distribution = []
+
+	_.each(worlds, function(world) {
+		distribution.push(world.playerCount);
+	});
+	return distribution;
 }
 
-function getConfigFile(path, callback) {
-    fs.readFile(path, 'utf8', function(err, json_string) {
-        if(err) {
-            console.error("Could not open config file:", err.path);
-            callback(null);
-        } else {
-            callback(JSON.parse(json_string));
-        }
-    });
-}
 
-var defaultConfigPath = './config.json'
-var customConfigPath = './config_local.json'
 
-process.argv.forEach(function (val, index, array) {
-    if(index === 2) {
-        customConfigPath = val;
-    }
-});
 
-getConfigFile(defaultConfigPath, function(defaultConfig) {
-    getConfigFile(customConfigPath, function(localConfig) {
-        if(localConfig) {
-            main(localConfig);
-        } else if(defaultConfig) {
-            main(defaultConfig);
-        } else {
-            console.error("Server cannot start without any configuration file.");
-            process.exit(1);
-        }
-    });
-});
+dotenv.config()
 
+main({
+	host: process.env.HOST,
+	port: process.env.PORT,
+	debug_level: process.env.DEBUG_LEVEL,
+	nb_players_per_world: parseInt(process.env.NB_PLAYERS_PER_WORLD),
+	nb_worlds: parseInt(process.env.NB_WORLDS),
+	map_filepath: process.env.MAP_FILEPATH,
+	metrics_enabled: process.env.METRICS_ENABLED === '1',
+	clientUrl: process.env.CLIENT_URL,
+	dataStoreFolder: process.env.DATA_STORE_FOLDER,
+})
 
 
 
 
 process
-    .on('unhandledRejection', (reason, p) => {
-        console.error(reason, 'Unhandled Rejection at Promise', p);
-    })
-    .on('uncaughtException', err => {
-        console.error(err, 'Uncaught Exception thrown');
-        process.exit(1);
-    })
+	.on('unhandledRejection', (reason, p) => {
+		console.error(reason, 'Unhandled Rejection at Promise', p);
+	})
+	.on('uncaughtException', err => {
+		console.error(err, 'Uncaught Exception thrown');
+		process.exit(1);
+	})

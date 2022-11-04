@@ -2,9 +2,9 @@ import * as _ from 'underscore'
 import * as Mobs from './mobs'
 import * as Items from './items'
 import * as NPCs from './npcs'
-import Warrior from './warrior'
 import Chest from './chest'
 import Mob from './mob'
+import Player from './player'
 import * as Types from '../../shared/gametypes'
 
 
@@ -28,7 +28,7 @@ EntityFactory.createEntity = function(kind, id, name) {
 EntityFactory.builders = [];
 
 EntityFactory.builders[Types.Entities.WARRIOR] = function(id, name) {
-    return new Warrior(id, name);
+    return new Player(id, name, Types.Entities.WARRIOR);
 };
 
 EntityFactory.builders[Types.Entities.RAT] = function(id) {

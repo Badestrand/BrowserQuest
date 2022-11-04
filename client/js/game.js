@@ -8,18 +8,19 @@ import Map from './map'
 import Animation from './animation'
 import Sprite from './sprite'
 import AnimatedTile from './tile'
-import Warrior from './warrior'
 import GameClient from './gameclient'
 import AudioManager from './audio'
 import Updater from './updater'
 import Transition from './transition'
 import Pathfinder from './pathfinder'
 import Item from './item'
+import Storage from './storage'
 import Mob from './mob'
 import Npc from './npc'
 import Player from './player'
 import Character from './character'
 import Chest from './chest'
+import server from './server'
 import * as Mobs from './mobs'
 import * as Exceptions from  './exceptions'
 import config from './config'
@@ -29,21 +30,19 @@ import * as Types from '../../shared/gametypes'
 
 
 export default class Game {
-	constructor(username) {
-		this.username = username
+	constructor($bubbleContainer, canvas, background, foreground) {
 		this.ready = false;
 		this.started = false;
 		this.hasNeverStarted = true;
 	
-		this.renderer = null;
 		this.updater = null;
 		this.pathfinder = null;
-		this.chatinput = null;
-		this.bubbleManager = null;
+		this.bubbleManager = new BubbleManager($bubbleContainer)
+		this.renderer = new Renderer(this, canvas, background, foreground)
 		this.audioManager = null;
 	
 		// Player
-		this.player = new Warrior("player", "");
+		// this.player = new Warrior("player", "");
 
 		// Game state
 		this.entities = {};
@@ -76,6 +75,7 @@ export default class Game {
 		this.cursors = {};
 
 		this.sprites = {};
+		this.storage = new Storage();
 	
 		// tile animation
 		this.animatedTiles = null;
@@ -90,69 +90,811 @@ export default class Game {
 							"platearmor", "redarmor", "goldenarmor", "firefox", "death", "sword1", "axe", "chest",
 							"sword2", "redsword", "bluesword", "goldensword", "item-sword2", "item-axe", "item-redsword", "item-bluesword", "item-goldensword", "item-leatherarmor", "item-mailarmor", 
 							"item-platearmor", "item-redarmor", "item-goldenarmor", "item-flask", "item-cake", "item-burger", "morningstar", "item-morningstar", "item-firepotion"];
-	}
-
-	setup($bubbleContainer, canvas, background, foreground, input) {
-		this.setBubbleManager(new BubbleManager($bubbleContainer));
-		this.setRenderer(new Renderer(this, canvas, background, foreground));
-		this.setChatInput(input);
-	}
-	
-	setStorage(storage) {
-		this.storage = storage;
-	}
-
-	setRenderer(renderer) {
-		this.renderer = renderer;
-	}
-
-	setUpdater(updater) {
-		this.updater = updater;
-	}
-
-	setPathfinder(pathfinder) {
-		this.pathfinder = pathfinder;
-	}
-
-	setChatInput(element) {
-		this.chatinput = element;
-	}
-
-	setBubbleManager(bubbleManager) {
-		this.bubbleManager = bubbleManager;
-	}
-
-	loadMap() {
-		var self = this;
 
 		this.map = new Map(!this.renderer.upscaledRendering, this);
+		this.map.ready(() => {
+			// var tilesetIndex = this.renderer.upscaledRendering ? 0 : this.renderer.scale - 1;
+			var tilesetIndex = 1
+			this.renderer.setTileset(this.map.tilesets[tilesetIndex]);
+		})
 
-		return new Promise((resolve, reject) => {
-			this.map.ready(function() {
-				log.info("Map loaded.");
-				// var tilesetIndex = self.renderer.upscaledRendering ? 0 : self.renderer.scale - 1;
-				var tilesetIndex = 1
-				self.renderer.setTileset(self.map.tilesets[tilesetIndex]);
-				resolve()
-			});
+		this.loadSprites()
+		this.updater = new Updater(this)
+		this.camera = this.renderer.camera
+	
+		this.setSpriteScale(this.renderer.scale)
+
+		this.readyPromise = new Promise((resolve) => {
+			const wait = setInterval(() => {
+				if(this.map.isLoaded && this.spritesLoaded()) {
+					log.debug('All sprites loaded.');
+
+					this.loadAudio();
+
+					this.initMusicAreas();
+					this.initAchievements();
+					this.initCursors();
+					this.initAnimations();
+					this.initShadows();
+					this.initHurtSprites();
+
+					if(!this.renderer.mobile && !this.renderer.tablet && this.renderer.upscaledRendering) {
+						this.initSilhouettes();
+					}
+
+					this.initEntityGrid();
+					this.initItemGrid();
+					this.initPathingGrid();
+					this.initRenderingGrid();
+
+					this.pathfinder = new Pathfinder(this.map.width, this.map.height)
+
+					this.setCursor('hand');
+					this.ready = true;
+
+					clearInterval(wait);
+					resolve()
+				}
+			}, 100);
 		})
 	}
 
-	initPlayer() {
-		if(this.storage.hasAlreadyPlayed()) {
-			this.player.unserialize(this.storage.data.player)
+
+	async enter({ident, secret}, started_callback) {
+		const {hero, id, x, y} = await server.enter({ident, secret})
+		log.info('Entering the world with id '+id+' at '+x+'/'+y)
+
+		this.client = new GameClient()
+		this.started = true;
+
+		this.client.onEntityList((list) => {
+			const entityIds = _.pluck(this.entities, 'id')
+			const knownIds = _.intersection(entityIds, list)
+			const newIds = _.difference(list, knownIds)
+		
+			this.obsoleteEntities = _.reject(this.entities, (entity) => {
+				return _.include(knownIds, entity.id) || entity.id === this.player.id;
+			});
+		
+			// Destroy entities outside of the player's zone group
+			this.removeObsoleteEntities();
+			
+			// Ask the server for spawn information about unknown entities
+			if(_.size(newIds) > 0) {
+				this.client.sendWho(newIds);
+			}
+		})
+
+
+		this.player = new Player(id, hero)
+		this.playerId = id
+		this.player.setGridPosition(x, y)
+		this.initPlayer()
+
+		this.updateBars();
+		this.resetCamera();
+		this.updatePlateauMode();
+		this.audioManager.updateMusic();
+
+		this.addEntity(this.player);
+		this.player.dirtyRect = this.renderer.getEntityBoundingRect(this.player);
+
+		setTimeout(() => {
+			this.tryUnlockingAchievement("STILL_ALIVE");
+		}, 1500);
+
+		if(!this.storage.hasAlreadyPlayed()) {
+			this.storage.initPlayer(this.player.name);
+			// this.storage.savePlayer(this.renderer.getPlayerImage(), this.player);
+			this.showNotification("Welcome to BrowserQuest!");
+		} else {
+			this.showNotification("Welcome back to BrowserQuest!");
+			this.storage.setPlayerName(name);
+		}
+
+		this.player.onStartPathing((path) => {
+			var i = path.length - 1,
+				x =  path[i][0],
+				y =  path[i][1];
+
+			if(this.player.isMovingToLoot()) {
+				this.player.isLootMoving = false;
+			}
+			else if(!this.player.isAttacking()) {
+				this.client.sendMove(x, y);
+			}
+
+			// Target cursor position
+			this.selectedX = x;
+			this.selectedY = y;
+			this.selectedCellVisible = true;
+
+			if(this.renderer.mobile || this.renderer.tablet) {
+				this.drawTarget = true;
+				this.clearTarget = true;
+				this.renderer.targetRect = this.renderer.getTargetBoundingRect();
+				this.checkOtherDirtyRects(this.renderer.targetRect, null, this.selectedX, this.selectedY);
+			}
+		});
+
+		this.player.onCheckAggro(() => {
+			this.forEachMob((mob) => {
+				if(mob.isAggressive && !mob.isAttacking() && this.player.isNear(mob, mob.aggroRange)) {
+					this.player.aggro(mob);
+				}
+			});
+		});
+
+		this.player.onAggro((mob) => {
+			if(!mob.isWaitingToAttack(this.player) && !this.player.isAttackedBy(mob)) {
+				this.player.log_info("Aggroed by " + mob.id + " at ("+this.player.gridX+", "+this.player.gridY+")");
+				this.client.sendAggro(mob);
+				mob.waitToAttack(this.player);
+			}
+		});
+
+		this.player.onBeforeStep(() => {
+			var blockingEntity = this.getEntityAt(this.player.nextGridX, this.player.nextGridY);
+			if(blockingEntity && blockingEntity.id !== this.playerId) {
+				log.debug("Blocked by " + blockingEntity.id);
+			}
+			this.unregisterEntityPosition(this.player);
+		});
+	
+		this.player.onStep(() => {
+			if(this.player.hasNextStep()) {
+				this.registerEntityDualPosition(this.player);
+			}
+		
+			if(this.isZoningTile(this.player.gridX, this.player.gridY)) {
+				this.enqueueZoningFrom(this.player.gridX, this.player.gridY);
+			}
+		
+			this.player.forEachAttacker((attacker) => {
+				if(attacker.isAdjacent(attacker.target)) {
+					attacker.lookAtTarget();
+				} else {
+					attacker.follow(this.player);
+				}
+			});
+		
+			if((this.player.gridX <= 85 && this.player.gridY <= 179 && this.player.gridY > 178) || (this.player.gridX <= 85 && this.player.gridY <= 266 && this.player.gridY > 265)) {
+				this.tryUnlockingAchievement("INTO_THE_WILD");
+			}
+			
+			if(this.player.gridX <= 85 && this.player.gridY <= 293 && this.player.gridY > 292) {
+				this.tryUnlockingAchievement("AT_WORLDS_END");
+			}
+			
+			if(this.player.gridX <= 85 && this.player.gridY <= 100 && this.player.gridY > 99) {
+				this.tryUnlockingAchievement("NO_MANS_LAND");
+			}
+			
+			if(this.player.gridX <= 85 && this.player.gridY <= 51 && this.player.gridY > 50) {
+				this.tryUnlockingAchievement("HOT_SPOT");
+			}
+			
+			if(this.player.gridX <= 27 && this.player.gridY <= 123 && this.player.gridY > 112) {
+				this.tryUnlockingAchievement("TOMB_RAIDER");
+			}
+		
+			this.updatePlayerCheckpoint();
+		
+			if(!this.player.isDead) {
+				this.audioManager.updateMusic();
+			}
+		});
+	
+		this.player.onStopPathing((x, y) => {
+			if(this.player.hasTarget()) {
+				this.player.lookAtTarget();
+			}
+		
+			this.selectedCellVisible = false;
+		
+			if(this.isItemAt(x, y)) {
+				var item = this.getItemAt(x, y);
+			
+				try {
+					this.player.loot(item);
+					this.client.sendLoot(item); // Notify the server that this item has been looted
+					this.removeItem(item);
+					this.showNotification(item.getLootMessage());
+				
+					if(item.type === "armor") {
+						this.tryUnlockingAchievement("FAT_LOOT");
+					}
+					
+					if(item.type === "weapon") {
+						this.tryUnlockingAchievement("A_TRUE_WARRIOR");
+					}
+
+					if(item.kind === Types.Entities.CAKE) {
+						this.tryUnlockingAchievement("FOR_SCIENCE");
+					}
+					
+					if(item.kind === Types.Entities.FIREPOTION) {
+						this.tryUnlockingAchievement("FOXY");
+						this.audioManager.playSound("firefox");
+					}
+				
+					if(Types.isHealingItem(item.kind)) {
+						this.audioManager.playSound("heal");
+					} else {
+						this.audioManager.playSound("loot");
+					}
+					
+					if(item.wasDropped && !_.includes(item.playersInvolved, this.playerId)) {
+						this.tryUnlockingAchievement("NINJA_LOOT");
+					}
+				} catch(e) {
+					if(e instanceof Exceptions.LootException) {
+						this.showNotification(e.message);
+						this.audioManager.playSound("noloot");
+					} else {
+						throw e;
+					}
+				}
+			}
+		
+			if(!this.player.hasTarget() && this.map.isDoor(x, y)) {
+				var dest = this.map.getDoorDestination(x, y);
+			
+				this.player.setGridPosition(dest.x, dest.y);
+				this.player.nextGridX = dest.x;
+				this.player.nextGridY = dest.y;
+				this.player.turnTo(dest.orientation);
+				this.client.sendTeleport(dest.x, dest.y);
+				
+				if(this.renderer.mobile && dest.cameraX && dest.cameraY) {
+					this.camera.setGridPosition(dest.cameraX, dest.cameraY);
+					this.resetZone();
+				} else {
+					if(dest.portal) {
+						this.assignBubbleTo(this.player);
+					} else {
+						this.camera.focusEntity(this.player);
+						this.resetZone();
+					}
+				}
+				
+				if(_.size(this.player.attackers) > 0) {
+					setTimeout(() => { this.tryUnlockingAchievement("COWARD"); }, 500);
+				}
+				this.player.forEachAttacker((attacker) => {
+					attacker.disengage();
+					attacker.idle();
+				});
+			
+				this.updatePlateauMode();
+				
+				this.checkUndergroundAchievement();
+				
+				if(this.renderer.mobile || this.renderer.tablet) {
+					// When rendering with dirty rects, clear the whole screen when entering a door.
+					this.renderer.clearScreen(this.renderer.context);
+				}
+				
+				if(dest.portal) {
+					this.audioManager.playSound("teleport");
+				}
+				
+				if(!this.player.isDead) {
+					this.audioManager.updateMusic();
+				}
+			}
+		
+			if(this.player.target instanceof Npc) {
+				this.makeNpcTalk(this.player.target);
+			} else if(this.player.target instanceof Chest) {
+				this.client.sendOpen(this.player.target);
+				this.audioManager.playSound("chest");
+			}
+			
+			this.player.forEachAttacker((attacker) => {
+				if(!attacker.isAdjacentNonDiagonal(this.player)) {
+					attacker.follow(this.player);
+				}
+			});
+		
+			this.unregisterEntityPosition(this.player);
+			this.registerEntityPosition(this.player);
+		});
+	
+		this.player.onRequestPath((x, y) => {
+			var ignored = [this.player]; // Always ignore self
+		
+			if(this.player.hasTarget()) {
+				ignored.push(this.player.target);
+			}
+			return this.findPath(this.player, x, y, ignored);
+		});
+	
+		this.player.onDeath(() => {
+			log.info(this.playerId + " is dead");
+		
+			this.player.stopBlinking();
+			this.player.setSprite(this.sprites["death"]);
+			this.player.animate("death", 120, 1, () => {
+				log.info(this.playerId + " was removed");
+			
+				this.removeEntity(this.player);
+				this.removeFromRenderingGrid(this.player, this.player.gridX, this.player.gridY);
+			
+				this.player = null;
+				this.client.disable();
+			
+				setTimeout(() => {
+					this.playerdeath_callback();
+				}, 1000);
+			});
+		
+			this.player.forEachAttacker((attacker) => {
+				attacker.disengage();
+				attacker.idle();
+			});
+		
+			this.audioManager.fadeOutCurrentMusic();
+			this.audioManager.playSound("death");
+		});
+	
+		this.player.onHasMoved((player) => {
+			this.assignBubbleTo(player);
+		});
+		
+		this.player.onArmorLoot((armorName) => {
+			this.player.switchArmor(this.sprites[armorName]);
+		});
+	
+		this.player.onSwitchItem(() => {
+			if(this.equipment_callback) {
+				this.equipment_callback();
+			}
+		});
+
+		this.player.on('update', () => {
+		})
+		
+		this.player.onInvincible(() => {
+			this.invincible_callback();
+			this.player.switchArmor(this.sprites["firefox"]);
+		});
+	
+		this.client.onSpawnItem((item, x, y) => {
+			log.info("Spawned " + Types.getKindAsString(item.kind) + " (" + item.id + ") at "+x+", "+y);
+			this.addItem(item, x, y);
+		});
+	
+		this.client.onSpawnChest((chest, x, y) => {
+			log.info("Spawned chest (" + chest.id + ") at "+x+", "+y);
+			chest.setSprite(this.sprites[chest.getSpriteName()]);
+			chest.setGridPosition(x, y);
+			chest.setAnimation("idle_down", 150);
+			this.addEntity(chest, x, y);
+		
+			chest.onOpen(() => {
+				chest.stopBlinking();
+				chest.setSprite(this.sprites["death"]);
+				chest.setAnimation("death", 120, 1, () => {
+					log.info(chest.id + " was removed");
+					this.removeEntity(chest);
+					this.removeFromRenderingGrid(chest, chest.gridX, chest.gridY);
+					this.previousClickPosition = {};
+				});
+			});
+		});
+	
+		this.client.onSpawnCharacter((entity, x, y, orientation, targetId) => {
+			if(!this.entityIdExists(entity.id)) {
+				try {
+					if(entity.id !== this.playerId) {
+						entity.setSprite(this.sprites[entity.getSpriteName()]);
+						entity.setGridPosition(x, y);
+						entity.setOrientation(orientation);
+						entity.idle();
+
+						this.addEntity(entity);
+				
+						log.debug("Spawned " + Types.getKindAsString(entity.kind) + " (" + entity.id + ") at "+entity.gridX+", "+entity.gridY);
+				
+						if(entity instanceof Character) {
+							entity.onBeforeStep(() => {
+								this.unregisterEntityPosition(entity);
+							});
+
+							entity.onStep(() => {
+								if(!entity.isDying) {
+									this.registerEntityDualPosition(entity);
+
+									entity.forEachAttacker((attacker) => {
+										if(attacker.isAdjacent(attacker.target)) {
+											attacker.lookAtTarget();
+										} else {
+											attacker.follow(entity);
+										}
+									});
+								}
+							});
+
+							entity.onStopPathing((x, y) => {
+								if(!entity.isDying) {
+									if(entity.hasTarget() && entity.isAdjacent(entity.target)) {
+										entity.lookAtTarget();
+									}
+						
+									if(entity instanceof Player) {
+										var gridX = entity.destination.gridX,
+											gridY = entity.destination.gridY;
+
+										if(this.map.isDoor(gridX, gridY)) {
+											var dest = this.map.getDoorDestination(gridX, gridY);
+											entity.setGridPosition(dest.x, dest.y);
+										}
+									}
+								
+									entity.forEachAttacker((attacker) => {
+										if(!attacker.isAdjacentNonDiagonal(entity) && attacker.id !== this.playerId) {
+											attacker.follow(entity);
+										}
+									});
+						
+									this.unregisterEntityPosition(entity);
+									this.registerEntityPosition(entity);
+								}
+							});
+
+							entity.onRequestPath((x, y) => {
+								var ignored = [entity], // Always ignore self
+									ignoreTarget = (target) => {
+										ignored.push(target);
+
+										// also ignore other attackers of the target entity
+										target.forEachAttacker((attacker) => {
+											ignored.push(attacker);
+										});
+									};
+								
+								if(entity.hasTarget()) {
+									ignoreTarget(entity.target);
+								} else if(entity.previousTarget) {
+									// If repositioning before attacking again, ignore previous target
+									// See: tryMovingToADifferentTile()
+									ignoreTarget(entity.previousTarget);
+								}
+								
+								return this.findPath(entity, x, y, ignored);
+							});
+
+							entity.onDeath(() => {
+								log.info(entity.id + " is dead");
+						
+								if(entity instanceof Mob) {
+									// Keep track of where mobs die in order to spawn their dropped items
+									// at the right position later.
+									this.deathpositions[entity.id] = {x: entity.gridX, y: entity.gridY};
+								}
+
+								entity.isDying = true;
+								entity.setSprite(this.sprites[entity instanceof Mobs.Rat ? "rat" : "death"]);
+								entity.animate("death", 120, 1, () => {
+									log.info(entity.id + " was removed");
+
+									this.removeEntity(entity);
+									this.removeFromRenderingGrid(entity, entity.gridX, entity.gridY);
+								});
+
+								entity.forEachAttacker((attacker) => {
+									attacker.disengage();
+								});
+								
+								if(this.player.target && this.player.target.id === entity.id) {
+									this.player.disengage();
+								}
+							
+								// Upon death, this entity is removed from both grids, allowing the player
+								// to click very fast in order to loot the dropped item and not be blocked.
+								// The entity is completely removed only after the death animation has ended.
+								this.removeFromEntityGrid(entity, entity.gridX, entity.gridY);
+								this.removeFromPathingGrid(entity.gridX, entity.gridY);
+							
+								if(this.camera.isVisible(entity)) {
+									this.audioManager.playSound("kill"+Math.floor(Math.random()*2+1));
+								}
+							
+								this.updateCursor();
+							});
+
+							entity.onHasMoved((entity) => {
+								this.assignBubbleTo(entity); // Make chat bubbles follow moving entities
+							});
+
+							if(entity instanceof Mob) {
+								if(targetId) {
+									var player = this.getEntityById(targetId);
+									if(player) {
+										this.createAttackLink(entity, player);
+									}
+								}
+							}
+						}
+					}
+				}
+				catch(e) {
+					log.error(e);
+				}
+			} else {
+				log.debug("Character "+entity.id+" already exists. Don't respawn.");
+			}
+		});
+
+		this.client.onDespawnEntity((entityId) => {
+			var entity = this.getEntityById(entityId);
+	
+			if(entity) {
+				log.info("Despawning " + Types.getKindAsString(entity.kind) + " (" + entity.id+ ")");
+				
+				if(entity.gridX === this.previousClickPosition.x
+				&& entity.gridY === this.previousClickPosition.y) {
+					this.previousClickPosition = {};
+				}
+				
+				if(entity instanceof Item) {
+					this.removeItem(entity);
+				} else if(entity instanceof Character) {
+					entity.forEachAttacker((attacker) => {
+						if(attacker.canReachTarget()) {
+							attacker.hit();
+						}
+					});
+					entity.die();
+				} else if(entity instanceof Chest) {
+					entity.open();
+				}
+				
+				entity.clean();
+			}
+		});
+	
+		this.client.on(Types.Messages.BLINK, (itemId) => {
+			var item = this.getEntityById(itemId)
+			if(item) {
+				item.blink(150)
+			}
+		})
+
+		this.client.onEntityMove((id, x, y) => {
+			var entity = null;
+
+			if(id !== this.playerId) {
+				entity = this.getEntityById(id);
+		
+				if(entity) {
+					if(this.player.isAttackedBy(entity)) {
+						this.tryUnlockingAchievement("COWARD");
+					}
+					entity.disengage();
+					entity.idle();
+					this.makeCharacterGoTo(entity, x, y);
+				}
+			}
+		});
+	
+		this.client.onEntityDestroy((id) => {
+			var entity = this.getEntityById(id);
+			if(entity) {
+				if(entity instanceof Item) {
+					this.removeItem(entity);
+				} else {
+					this.removeEntity(entity);
+				}
+				log.debug("Entity was destroyed: "+entity.id);
+			}
+		});
+	
+		this.client.onPlayerMoveToItem((playerId, itemId) => {
+			var player, item;
+
+			if(playerId !== this.playerId) {
+				player = this.getEntityById(playerId);
+				item = this.getEntityById(itemId);
+		
+				if(player && item) {
+					this.makeCharacterGoTo(player, item.gridX, item.gridY);
+				}
+			}
+		});
+	
+		this.client.onEntityAttack((attackerId, targetId) => {
+			var attacker = this.getEntityById(attackerId),
+				target = this.getEntityById(targetId);
+		
+			if(attacker && target && attacker.id !== this.playerId) {
+				log.debug(attacker.id + " attacks " + target.id);
+				
+				if(attacker && target instanceof Player && target.id !== this.playerId && target.target && target.target.id === attacker.id && attacker.getDistanceToEntity(target) < 3) {
+					setTimeout(() => {
+						this.createAttackLink(attacker, target);
+					}, 200); // delay to prevent other players attacking mobs from ending up on the same tile as they walk towards each other.
+				} else {
+					this.createAttackLink(attacker, target);
+				}
+			}
+		});
+	
+		this.client.onPlayerDamageMob((mobId, points) => {
+			var mob = this.getEntityById(mobId);
+			if(mob && points) {
+				this.infoManager.addDamageInfo(points, mob.x, mob.y - 15, "inflicted");
+			}
+		});
+	
+		this.client.onPlayerKillMob((kind, exp) => {
+			const mobName = Types.getDisplayName(kind);
+
+			if(mobName === 'boss') {
+				this.showNotification("You killed the skeleton king");
+			} else {
+				if(_.include(['a', 'e', 'i', 'o', 'u'], mobName[0])) {
+					this.showNotification("You killed an " + mobName);
+				} else {
+					this.showNotification("You killed a " + mobName);
+				}
+			}
+
+			this.storage.incrementTotalKills()
+			this.player.gainExperience(exp)
+			setTimeout(() => {
+				this.infoManager.addExperienceInfo(exp, this.player.x, this.player.y - 15);
+			}, 200)
+			this.tryUnlockingAchievement("HUNTER");
+
+			if(kind === Types.Entities.RAT) {
+				this.storage.incrementRatCount();
+				this.tryUnlockingAchievement("ANGRY_RATS");
+			}
+			
+			if(kind === Types.Entities.SKELETON || kind === Types.Entities.SKELETON2) {
+				this.storage.incrementSkeletonCount();
+				this.tryUnlockingAchievement("SKULL_COLLECTOR");
+			}
+
+			if(kind === Types.Entities.BOSS) {
+				this.tryUnlockingAchievement("HERO");
+			}
+		})
+
+		this.player.on('level-up', () => {
+			setTimeout(() => {
+				this.audioManager.playSound("achievement")
+				this.infoManager.addLevelUpInfo(this.player.x, this.player.y - 15)
+			}, 400)
+		})
+	
+		this.client.onPlayerChangeHealth((points, isRegen) => {
+			let player = this.player
+
+			if(player && !player.isDead && !player.invincible) {
+				const isHurt = points <= player.getCurHitpoints()
+				const diff = points - player.getCurHitpoints()
+				player.setCurHitpoints(points)
+
+				if(isHurt) {
+					this.infoManager.addDamageInfo(diff, player.x, player.y - 15, "received");
+					this.audioManager.playSound("hurt");
+					this.storage.addDamage(-diff);
+					this.tryUnlockingAchievement("MEATSHIELD");
+					if(this.playerhurt_callback) {
+						this.playerhurt_callback();
+					}
+				} else if(!isRegen){
+					this.infoManager.addDamageInfo("+"+diff, player.x, player.y - 15, "healed");
+				}
+				this.updateBars();
+			}
+		});
+	
+		this.client.onPlayerChangeMaxHitPoints((hp) => {
+			this.player.maxHitpoints = hp;
+			this.player.hitpoints = hp;
+			this.updateBars();
+		});
+	
+		this.client.onPlayerEquipItem((playerId, itemKind) => {
+			var player = this.getEntityById(playerId),
+				itemName = Types.getKindAsString(itemKind);
+		
+			if(player) {
+				if(Types.isArmor(itemKind)) {
+					player.setSprite(this.sprites[itemName]);
+				} else if(Types.isWeapon(itemKind)) {
+					player.setWeaponName(itemName);
+				}
+			}
+		});
+	
+		this.client.onPlayerTeleport((id, x, y) => {
+			var entity = null,
+				currentOrientation;
+
+			if(id !== this.playerId) {
+				entity = this.getEntityById(id);
+		
+				if(entity) {
+					currentOrientation = entity.orientation;
+				
+					this.makeCharacterTeleportTo(entity, x, y);
+					entity.setOrientation(currentOrientation);
+				
+					entity.forEachAttacker((attacker) => {
+						attacker.disengage();
+						attacker.idle();
+						attacker.stop();
+					});
+				}
+			}
+		});
+	
+		this.client.onDropItem((item, mobId) => {
+			var pos = this.getDeadMobPosition(mobId);
+		
+			if(pos) {
+				this.addItem(item, pos.x, pos.y);
+				this.updateCursor();
+			}
+		});
+	
+		this.client.onChatMessage((entityId, message) => {
+			var entity = this.getEntityById(entityId);
+			this.createBubble(entityId, message);
+			this.assignBubbleTo(entity);
+			this.audioManager.playSound("chat");
+		});
+	
+		this.client.onPopulationChange((worldPlayers, totalPlayers) => {
+			if(this.nbplayers_callback) {
+				this.nbplayers_callback(worldPlayers, totalPlayers);
+			}
+		});
+		
+		this.client.onDisconnected((message) => {
+			if(this.player) {
+				this.player.die();
+			}
+			if(this.disconnect_callback) {
+				this.disconnect_callback(message);
+			}
+		});
+	
+		if (this.gamestart_callback) {
+			this.gamestart_callback();
 		}
 	
+		if(this.hasNeverStarted) {
+			this.start();
+			if (started_callback) {
+				started_callback();
+			}
+		}
+	}
+
+
+	initPlayer() {
+	// 	if(this.storage.hasAlreadyPlayed()) {
+	// 		this.player.unserialize(this.storage.data.player)
+	// 	}
+	// 
 		this.player.setSprite(this.sprites[this.player.getSpriteName()]);
 		this.player.idle();
-	
-		log.debug("Finished initPlayer");
+	// 
+	// 	log.debug("Finished initPlayer");
 	}
+
 
 	initShadows() {
 		this.shadows = {};
 		this.shadows["small"] = this.sprites["shadow16"];
 	}
+
 
 	initCursors() {
 		this.cursors["hand"] = this.sprites["hand"];
@@ -163,6 +905,7 @@ export default class Game {
 		this.cursors["talk"] = this.sprites["talk"];
 	}
 
+
 	initAnimations() {
 		this.targetAnimation = new Animation("idle_down", 4, 0, 16, 16);
 		this.targetAnimation.setSpeed(50);
@@ -171,27 +914,24 @@ export default class Game {
 		this.sparksAnimation.setSpeed(120);
 	}
 
+
 	initHurtSprites() {
-		var self = this;
-	
-		Types.forEachArmorKind(function(kind, kindName) {
-			self.sprites[kindName].createHurtSprite();
+		Types.forEachArmorKind((kind, kindName) => {
+			this.sprites[kindName].createHurtSprite();
 		});
 	}
+
 
 	initSilhouettes() {
-		var self = this;
-
-		Types.forEachMobOrNpcKind(function(kind, kindName) {
-			self.sprites[kindName].createSilhouette();
+		Types.forEachMobOrNpcKind((kind, kindName) => {
+			this.sprites[kindName].createSilhouette();
 		});
-		self.sprites["chest"].createSilhouette();
-		self.sprites["item-cake"].createSilhouette();
+		this.sprites["chest"].createSilhouette();
+		this.sprites["item-cake"].createSilhouette();
 	}
 
+
 	initAchievements() {
-		var self = this;
-	
 		this.achievements = {
 			A_TRUE_WARRIOR: {
 				id: 1,
@@ -207,8 +947,8 @@ export default class Game {
 				id: 3,
 				name: "Angry Rats",
 				desc: "Kill 10 rats",
-				isCompleted: function() {
-					return self.storage.getRatCount() >= 10;
+				isCompleted: () => {
+					return this.storage.getRatCount() >= 10;
 				}
 			},
 			SMALL_TALK: {
@@ -245,8 +985,8 @@ export default class Game {
 				id: 10,
 				name: "Skull Collector",
 				desc: "Kill 10 skeletons",
-				isCompleted: function() {
-					return self.storage.getSkeletonCount() >= 10;
+				isCompleted: () => {
+					return this.storage.getSkeletonCount() >= 10;
 				}
 			},
 			NINJA_LOOT: {
@@ -263,24 +1003,24 @@ export default class Game {
 				id: 13,
 				name: "Hunter",
 				desc: "Kill 50 enemies",
-				isCompleted: function() {
-					return self.storage.getTotalKills() >= 50;
+				isCompleted: () => {
+					return this.storage.getTotalKills() >= 50;
 				}
 			},
 			STILL_ALIVE: {
 				id: 14,
 				name: "Still Alive",
 				desc: "Revive your character five times",
-				isCompleted: function() {
-					return self.storage.getTotalRevives() >= 5;
+				isCompleted: () => {
+					return this.storage.getTotalRevives() >= 5;
 				}
 			},
 			MEATSHIELD: {
 				id: 15,
 				name: "Meatshield",
 				desc: "Take 5,000 points of damage",
-				isCompleted: function() {
-					return self.storage.getTotalDamageTaken() >= 5000;
+				isCompleted: () => {
+					return this.storage.getTotalDamageTaken() >= 5000;
 				}
 			},
 			HOT_SPOT: {
@@ -313,9 +1053,9 @@ export default class Game {
 			}
 		};
 	
-		_.each(this.achievements, function(obj) {
+		_.each(this.achievements, (obj) => {
 			if(!obj.isCompleted) {
-				obj.isCompleted = function() {
+				obj.isCompleted = () => {
 					return true;
 				}
 			}
@@ -330,15 +1070,17 @@ export default class Game {
 		// }
 	}
 
+
 	getAchievementById(id) {
 		var found = null;
-		_.each(this.achievements, function(achievement, key) {
+		_.each(this.achievements, (achievement, key) => {
 			if(achievement.id === parseInt(id)) {
 				found = achievement;
 			}
 		});
 		return found;
 	}
+
 
 	loadSprite(name) {
 		if(this.renderer.upscaledRendering) {
@@ -351,23 +1093,23 @@ export default class Game {
 		}
 	}
 
+
 	setSpriteScale(scale) {
-		var self = this;
-		
 		if(this.renderer.upscaledRendering) {
 			this.sprites = this.spritesets[0];
 		} else {
 			this.sprites = this.spritesets[scale - 1];
 			
-			_.each(this.entities, function(entity) {
+			_.each(this.entities, (entity) => {
 				entity.sprite = null;
-				entity.setSprite(self.sprites[entity.getSpriteName()]);
+				entity.setSprite(this.sprites[entity.getSpriteName()]);
 			});
 			this.initHurtSprites();
 			this.initShadows();
 			this.initCursors();
 		}
 	}
+
 
 	loadSprites() {
 		log.info("Loading sprites...");
@@ -378,12 +1120,14 @@ export default class Game {
 		_.map(this.spriteNames, this.loadSprite, this);
 	}
 
+
 	spritesLoaded() {
-		if(_.any(this.sprites, function(sprite) { return !sprite.isLoaded; })) {
+		if(_.any(this.sprites, (sprite) => !sprite.isLoaded)) {
 			return false;
 		}
 		return true;
 	}
+
 
 	setCursor(name, orientation) {
 		if(name in this.cursors) {
@@ -393,6 +1137,7 @@ export default class Game {
 			log.error("Unknown cursor name :"+name);
 		}
 	}
+
 
 	updateCursorLogic() {
 		if(this.hoveringCollidingTile && this.started) {
@@ -424,13 +1169,13 @@ export default class Game {
 		}
 	}
 
+
 	focusPlayer() {
 		this.renderer.camera.lookAt(this.player);
 	}
 
+
 	addEntity(entity) {
-		var self = this;
-		
 		if(this.entities[entity.id] === undefined) {
 			this.entities[entity.id] = entity;
 			this.registerEntityPosition(entity);
@@ -441,10 +1186,10 @@ export default class Game {
 			}
 			
 			if(this.renderer.mobile || this.renderer.tablet) {
-				entity.onDirty(function(e) {
-					if(self.camera.isVisible(e)) {
-						e.dirtyRect = self.renderer.getEntityBoundingRect(e);
-						self.checkOtherDirtyRects(e.dirtyRect, e, e.gridX, e.gridY);
+				entity.onDirty((e) => {
+					if(this.camera.isVisible(e)) {
+						e.dirtyRect = this.renderer.getEntityBoundingRect(e);
+						this.checkOtherDirtyRects(e.dirtyRect, e, e.gridX, e.gridY);
 					}
 				});
 			}
@@ -453,6 +1198,7 @@ export default class Game {
 			log.error("This entity already exists : " + entity.id + " ("+entity.kind+")");
 		}
 	}
+
 
 	removeEntity(entity) {
 		if(entity.id in this.entities) {
@@ -464,12 +1210,14 @@ export default class Game {
 		}
 	}
 
+
 	addItem(item, x, y) {
 		item.setSprite(this.sprites[item.getSpriteName()]);
 		item.setGridPosition(x, y);
 		item.setAnimation("idle", 150);
 		this.addEntity(item);
 	}
+
 
 	removeItem(item) {
 		if(item) {
@@ -480,6 +1228,7 @@ export default class Game {
 			log.error("Cannot remove item. Unknown ID : " + item.id);
 		}
 	}
+
 
 	initPathingGrid() {
 		this.pathingGrid = [];
@@ -492,6 +1241,7 @@ export default class Game {
 		log.info("Initialized the pathing grid with static colliding cells.");
 	}
 
+
 	initEntityGrid() {
 		this.entityGrid = [];
 		for(var i=0; i < this.map.height; i += 1) {
@@ -502,6 +1252,7 @@ export default class Game {
 		}
 		log.info("Initialized the entity grid.");
 	}
+
 
 	initRenderingGrid() {
 		this.renderingGrid = [];
@@ -514,6 +1265,7 @@ export default class Game {
 		log.info("Initialized the rendering grid.");
 	}
 
+
 	initItemGrid() {
 		this.itemGrid = [];
 		for(var i=0; i < this.map.height; i += 1) {
@@ -525,26 +1277,24 @@ export default class Game {
 		log.info("Initialized the item grid.");
 	}
 
-	/**
-	 * 
-	 */
+
 	initAnimatedTiles() {
-		var self = this,
-			m = this.map;
+		var m = this.map;
 
 		this.animatedTiles = [];
-		this.forEachVisibleTile(function (id, index) {
+		this.forEachVisibleTile((id, index) => {
 			if(m.isAnimatedTile(id)) {
 				var tile = new AnimatedTile(id, m.getTileAnimationLength(id), m.getTileAnimationDelay(id), index),
-					pos = self.map.tileIndexToGridPosition(tile.index);
+					pos = this.map.tileIndexToGridPosition(tile.index);
 				
 				tile.x = pos.x;
 				tile.y = pos.y;
-				self.animatedTiles.push(tile);
+				this.animatedTiles.push(tile);
 			}
 		}, 1);
 		//log.info("Initialized animated tiles.");
 	}
+
 
 	addToRenderingGrid(entity, x, y) {
 		if(!this.map.isOutOfBounds(x, y)) {
@@ -552,17 +1302,20 @@ export default class Game {
 		}
 	}
 
+
 	removeFromRenderingGrid(entity, x, y) {
 		if(entity && this.renderingGrid[y][x] && entity.id in this.renderingGrid[y][x]) {
 			delete this.renderingGrid[y][x][entity.id];
 		}
 	}
 
+
 	removeFromEntityGrid(entity, x, y) {
 		if(this.entityGrid[y][x][entity.id]) {
 			delete this.entityGrid[y][x][entity.id];
 		}
 	}
+
 	
 	removeFromItemGrid(item, x, y) {
 		if(item && this.itemGrid[y][x][item.id]) {
@@ -570,9 +1323,11 @@ export default class Game {
 		}
 	}
 
+
 	removeFromPathingGrid(x, y) {
 		this.pathingGrid[y][x] = 0;
 	}
+
 
 	/**
 	 * Registers the entity at two adjacent positions on the grid at the same time.
@@ -596,6 +1351,7 @@ export default class Game {
 		}
 	}
 
+
 	/**
 	 * Clears the position(s) of this entity in the entity grid.
 	 *
@@ -614,6 +1370,7 @@ export default class Game {
 			}
 		}
 	}
+
 
 	registerEntityPosition(entity) {
 		var x = entity.gridX,
@@ -634,67 +1391,18 @@ export default class Game {
 		}
 	}
 
-	setServerOptions(host, port) {
-		this.host = host;
-		this.port = port;
-	}
 
 	loadAudio() {
 		this.audioManager = new AudioManager(this);
 	}
 
+
 	initMusicAreas() {
-		var self = this;
-		_.each(this.map.musicAreas, function(area) {
-			self.audioManager.addArea(area.x, area.y, area.w, area.h, area.id);
+		_.each(this.map.musicAreas, (area) => {
+			this.audioManager.addArea(area.x, area.y, area.w, area.h, area.id);
 		});
 	}
 
-	run(started_callback) {
-		var self = this;
-	
-		this.loadSprites();
-		this.setUpdater(new Updater(this));
-		this.camera = this.renderer.camera;
-	
-		this.setSpriteScale(this.renderer.scale);
-	
-		var wait = setInterval(function() {
-			if(self.map.isLoaded && self.spritesLoaded()) {
-				self.ready = true;
-				log.debug('All sprites loaded.');
-
-				self.loadAudio();
-
-				self.initMusicAreas();
-				self.initAchievements();
-				self.initCursors();
-				self.initAnimations();
-				self.initShadows();
-				self.initHurtSprites();
-
-				if(!self.renderer.mobile
-				&& !self.renderer.tablet 
-				&& self.renderer.upscaledRendering) {
-					self.initSilhouettes();
-				}
-
-				self.initEntityGrid();
-				self.initItemGrid();
-				self.initPathingGrid();
-				self.initRenderingGrid();
-
-				self.setPathfinder(new Pathfinder(self.map.width, self.map.height));
-
-				self.initPlayer();
-				self.setCursor("hand");
-
-				self.connect(started_callback);
-
-				clearInterval(wait);
-			}
-		}, 100);
-	}
 
 	tick() {
 		this.currentTime = new Date().getTime();
@@ -710,20 +1418,24 @@ export default class Game {
 		}
 	}
 
+
 	start() {
 		this.tick();
 		this.hasNeverStarted = false;
 		log.info("Game loop started.");
 	}
 
+
 	stop() {
 		log.info("Game stopped.");
 		this.isStopped = true;
 	}
 
+
 	entityIdExists(id) {
 		return id in this.entities;
 	}
+
 
 	getEntityById(id) {
 		if(id in this.entities) {
@@ -734,778 +1446,6 @@ export default class Game {
 		}
 	}
 
-	connect(started_callback) {
-		var self = this,
-			connecting = false; // always in dispatcher mode in the build version
-
-		this.client = new GameClient(this.host, this.port);
-		
-		this.client.connect(config.dispatcher); // false if the client connects directly to a game server
-		connecting = true;
-
-		if(!connecting) {
-			this.client.connect(true); // always use the dispatcher in production
-		}
-		
-		this.client.onDispatched(function(host, port) {
-			log.debug("Dispatched to game server "+host+ ":"+port);
-			
-			self.client.host = host;
-			self.client.port = port;
-			self.client.connect(); // connect to actual game server
-		});
-		
-		this.client.onConnected(function() {
-			log.info("Starting client/server handshake");
-			
-			self.player.name = self.username;
-			self.started = true;
-		
-			self.sendHello();
-		});
-	
-		this.client.onEntityList(function(list) {
-			var entityIds = _.pluck(self.entities, 'id'),
-				knownIds = _.intersection(entityIds, list),
-				newIds = _.difference(list, knownIds);
-		
-			self.obsoleteEntities = _.reject(self.entities, function(entity) {
-				return _.include(knownIds, entity.id) || entity.id === self.player.id;
-			});
-		
-			// Destroy entities outside of the player's zone group
-			self.removeObsoleteEntities();
-			
-			// Ask the server for spawn information about unknown entities
-			if(_.size(newIds) > 0) {
-				self.client.sendWho(newIds);
-			}
-		});
-	
-		this.client.onWelcome(function(id, name, x, y, hp) {
-			log.info("Received player ID from server : "+ id);
-			self.player.id = id;
-			self.playerId = id;
-			// Always accept name received from the server which will
-			// sanitize and shorten names exceeding the allowed length.
-			self.player.name = name;
-			self.player.setGridPosition(x, y);
-			self.player.setMaxHitPoints(hp);
-		
-			self.updateBars();
-			self.resetCamera();
-			self.updatePlateauMode();
-			self.audioManager.updateMusic();
-		
-			self.addEntity(self.player);
-			self.player.dirtyRect = self.renderer.getEntityBoundingRect(self.player);
-
-			setTimeout(function() {
-				self.tryUnlockingAchievement("STILL_ALIVE");
-			}, 1500);
-		
-			if(!self.storage.hasAlreadyPlayed()) {
-				self.storage.initPlayer(self.player.name);
-				self.storage.savePlayer(self.renderer.getPlayerImage(), self.player);
-				self.showNotification("Welcome to BrowserQuest!");
-			} else {
-				self.showNotification("Welcome back to BrowserQuest!");
-				self.storage.setPlayerName(name);
-			}
-	
-			self.player.onStartPathing(function(path) {
-				var i = path.length - 1,
-					x =  path[i][0],
-					y =  path[i][1];
-
-				if(self.player.isMovingToLoot()) {
-					self.player.isLootMoving = false;
-				}
-				else if(!self.player.isAttacking()) {
-					self.client.sendMove(x, y);
-				}
-
-				// Target cursor position
-				self.selectedX = x;
-				self.selectedY = y;
-				self.selectedCellVisible = true;
-
-				if(self.renderer.mobile || self.renderer.tablet) {
-					self.drawTarget = true;
-					self.clearTarget = true;
-					self.renderer.targetRect = self.renderer.getTargetBoundingRect();
-					self.checkOtherDirtyRects(self.renderer.targetRect, null, self.selectedX, self.selectedY);
-				}
-			});
-
-			self.player.onCheckAggro(function() {
-				self.forEachMob(function(mob) {
-					if(mob.isAggressive && !mob.isAttacking() && self.player.isNear(mob, mob.aggroRange)) {
-						self.player.aggro(mob);
-					}
-				});
-			});
-
-			self.player.onAggro(function(mob) {
-				if(!mob.isWaitingToAttack(self.player) && !self.player.isAttackedBy(mob)) {
-					self.player.log_info("Aggroed by " + mob.id + " at ("+self.player.gridX+", "+self.player.gridY+")");
-					self.client.sendAggro(mob);
-					mob.waitToAttack(self.player);
-				}
-			});
-
-			self.player.onBeforeStep(function() {
-				var blockingEntity = self.getEntityAt(self.player.nextGridX, self.player.nextGridY);
-				if(blockingEntity && blockingEntity.id !== self.playerId) {
-					log.debug("Blocked by " + blockingEntity.id);
-				}
-				self.unregisterEntityPosition(self.player);
-			});
-		
-			self.player.onStep(function() {
-				if(self.player.hasNextStep()) {
-					self.registerEntityDualPosition(self.player);
-				}
-			
-				if(self.isZoningTile(self.player.gridX, self.player.gridY)) {
-					self.enqueueZoningFrom(self.player.gridX, self.player.gridY);
-				}
-			
-				self.player.forEachAttacker(function(attacker) {
-					if(attacker.isAdjacent(attacker.target)) {
-						attacker.lookAtTarget();
-					} else {
-						attacker.follow(self.player);
-					}
-				});
-			
-				if((self.player.gridX <= 85 && self.player.gridY <= 179 && self.player.gridY > 178) || (self.player.gridX <= 85 && self.player.gridY <= 266 && self.player.gridY > 265)) {
-					self.tryUnlockingAchievement("INTO_THE_WILD");
-				}
-				
-				if(self.player.gridX <= 85 && self.player.gridY <= 293 && self.player.gridY > 292) {
-					self.tryUnlockingAchievement("AT_WORLDS_END");
-				}
-				
-				if(self.player.gridX <= 85 && self.player.gridY <= 100 && self.player.gridY > 99) {
-					self.tryUnlockingAchievement("NO_MANS_LAND");
-				}
-				
-				if(self.player.gridX <= 85 && self.player.gridY <= 51 && self.player.gridY > 50) {
-					self.tryUnlockingAchievement("HOT_SPOT");
-				}
-				
-				if(self.player.gridX <= 27 && self.player.gridY <= 123 && self.player.gridY > 112) {
-					self.tryUnlockingAchievement("TOMB_RAIDER");
-				}
-			
-				self.updatePlayerCheckpoint();
-			
-				if(!self.player.isDead) {
-					self.audioManager.updateMusic();
-				}
-			});
-		
-			self.player.onStopPathing(function(x, y) {
-				if(self.player.hasTarget()) {
-					self.player.lookAtTarget();
-				}
-			
-				self.selectedCellVisible = false;
-			
-				if(self.isItemAt(x, y)) {
-					var item = self.getItemAt(x, y);
-				
-					try {
-						self.player.loot(item);
-						self.client.sendLoot(item); // Notify the server that this item has been looted
-						self.removeItem(item);
-						self.showNotification(item.getLootMessage());
-					
-						if(item.type === "armor") {
-							self.tryUnlockingAchievement("FAT_LOOT");
-						}
-						
-						if(item.type === "weapon") {
-							self.tryUnlockingAchievement("A_TRUE_WARRIOR");
-						}
-
-						if(item.kind === Types.Entities.CAKE) {
-							self.tryUnlockingAchievement("FOR_SCIENCE");
-						}
-						
-						if(item.kind === Types.Entities.FIREPOTION) {
-							self.tryUnlockingAchievement("FOXY");
-							self.audioManager.playSound("firefox");
-						}
-					
-						if(Types.isHealingItem(item.kind)) {
-							self.audioManager.playSound("heal");
-						} else {
-							self.audioManager.playSound("loot");
-						}
-						
-						if(item.wasDropped && !_.includes(item.playersInvolved, self.playerId)) {
-							self.tryUnlockingAchievement("NINJA_LOOT");
-						}
-					} catch(e) {
-						if(e instanceof Exceptions.LootException) {
-							self.showNotification(e.message);
-							self.audioManager.playSound("noloot");
-						} else {
-							throw e;
-						}
-					}
-				}
-			
-				if(!self.player.hasTarget() && self.map.isDoor(x, y)) {
-					var dest = self.map.getDoorDestination(x, y);
-				
-					self.player.setGridPosition(dest.x, dest.y);
-					self.player.nextGridX = dest.x;
-					self.player.nextGridY = dest.y;
-					self.player.turnTo(dest.orientation);
-					self.client.sendTeleport(dest.x, dest.y);
-					
-					if(self.renderer.mobile && dest.cameraX && dest.cameraY) {
-						self.camera.setGridPosition(dest.cameraX, dest.cameraY);
-						self.resetZone();
-					} else {
-						if(dest.portal) {
-							self.assignBubbleTo(self.player);
-						} else {
-							self.camera.focusEntity(self.player);
-							self.resetZone();
-						}
-					}
-					
-					if(_.size(self.player.attackers) > 0) {
-						setTimeout(function() { self.tryUnlockingAchievement("COWARD"); }, 500);
-					}
-					self.player.forEachAttacker(function(attacker) {
-						attacker.disengage();
-						attacker.idle();
-					});
-				
-					self.updatePlateauMode();
-					
-					self.checkUndergroundAchievement();
-					
-					if(self.renderer.mobile || self.renderer.tablet) {
-						// When rendering with dirty rects, clear the whole screen when entering a door.
-						self.renderer.clearScreen(self.renderer.context);
-					}
-					
-					if(dest.portal) {
-						self.audioManager.playSound("teleport");
-					}
-					
-					if(!self.player.isDead) {
-						self.audioManager.updateMusic();
-					}
-				}
-			
-				if(self.player.target instanceof Npc) {
-					self.makeNpcTalk(self.player.target);
-				} else if(self.player.target instanceof Chest) {
-					self.client.sendOpen(self.player.target);
-					self.audioManager.playSound("chest");
-				}
-				
-				self.player.forEachAttacker(function(attacker) {
-					if(!attacker.isAdjacentNonDiagonal(self.player)) {
-						attacker.follow(self.player);
-					}
-				});
-			
-				self.unregisterEntityPosition(self.player);
-				self.registerEntityPosition(self.player);
-			});
-		
-			self.player.onRequestPath(function(x, y) {
-				var ignored = [self.player]; // Always ignore self
-			
-				if(self.player.hasTarget()) {
-					ignored.push(self.player.target);
-				}
-				return self.findPath(self.player, x, y, ignored);
-			});
-		
-			self.player.onDeath(function() {
-				log.info(self.playerId + " is dead");
-			
-				self.player.stopBlinking();
-				self.player.setSprite(self.sprites["death"]);
-				self.player.animate("death", 120, 1, function() {
-					log.info(self.playerId + " was removed");
-				
-					self.removeEntity(self.player);
-					self.removeFromRenderingGrid(self.player, self.player.gridX, self.player.gridY);
-				
-					self.player = null;
-					self.client.disable();
-				
-					setTimeout(function() {
-						self.playerdeath_callback();
-					}, 1000);
-				});
-			
-				self.player.forEachAttacker(function(attacker) {
-					attacker.disengage();
-					attacker.idle();
-				});
-			
-				self.audioManager.fadeOutCurrentMusic();
-				self.audioManager.playSound("death");
-			});
-		
-			self.player.onHasMoved(function(player) {
-				self.assignBubbleTo(player);
-			});
-			
-			self.player.onArmorLoot(function(armorName) {
-				self.player.switchArmor(self.sprites[armorName]);
-			});
-		
-			self.player.onSwitchItem(function() {
-				self.storage.savePlayer(self.renderer.getPlayerImage(), self.player)
-				if(self.equipment_callback) {
-					self.equipment_callback();
-				}
-			});
-
-			self.player.on('update', () => {
-				self.storage.savePlayer(self.renderer.getPlayerImage(), self.player)
-			})
-			
-			self.player.onInvincible(function() {
-				self.invincible_callback();
-				self.player.switchArmor(self.sprites["firefox"]);
-			});
-		
-			self.client.onSpawnItem(function(item, x, y) {
-				log.info("Spawned " + Types.getKindAsString(item.kind) + " (" + item.id + ") at "+x+", "+y);
-				self.addItem(item, x, y);
-			});
-		
-			self.client.onSpawnChest(function(chest, x, y) {
-				log.info("Spawned chest (" + chest.id + ") at "+x+", "+y);
-				chest.setSprite(self.sprites[chest.getSpriteName()]);
-				chest.setGridPosition(x, y);
-				chest.setAnimation("idle_down", 150);
-				self.addEntity(chest, x, y);
-			
-				chest.onOpen(function() {
-					chest.stopBlinking();
-					chest.setSprite(self.sprites["death"]);
-					chest.setAnimation("death", 120, 1, function() {
-						log.info(chest.id + " was removed");
-						self.removeEntity(chest);
-						self.removeFromRenderingGrid(chest, chest.gridX, chest.gridY);
-						self.previousClickPosition = {};
-					});
-				});
-			});
-		
-			self.client.onSpawnCharacter(function(entity, x, y, orientation, targetId) {
-				if(!self.entityIdExists(entity.id)) {
-					try {
-						if(entity.id !== self.playerId) {
-							entity.setSprite(self.sprites[entity.getSpriteName()]);
-							entity.setGridPosition(x, y);
-							entity.setOrientation(orientation);
-							entity.idle();
-
-							self.addEntity(entity);
-					
-							log.debug("Spawned " + Types.getKindAsString(entity.kind) + " (" + entity.id + ") at "+entity.gridX+", "+entity.gridY);
-					
-							if(entity instanceof Character) {
-								entity.onBeforeStep(function() {
-									self.unregisterEntityPosition(entity);
-								});
-
-								entity.onStep(function() {
-									if(!entity.isDying) {
-										self.registerEntityDualPosition(entity);
-
-										entity.forEachAttacker(function(attacker) {
-											if(attacker.isAdjacent(attacker.target)) {
-												attacker.lookAtTarget();
-											} else {
-												attacker.follow(entity);
-											}
-										});
-									}
-								});
-
-								entity.onStopPathing(function(x, y) {
-									if(!entity.isDying) {
-										if(entity.hasTarget() && entity.isAdjacent(entity.target)) {
-											entity.lookAtTarget();
-										}
-							
-										if(entity instanceof Player) {
-											var gridX = entity.destination.gridX,
-												gridY = entity.destination.gridY;
-
-											if(self.map.isDoor(gridX, gridY)) {
-												var dest = self.map.getDoorDestination(gridX, gridY);
-												entity.setGridPosition(dest.x, dest.y);
-											}
-										}
-									
-										entity.forEachAttacker(function(attacker) {
-											if(!attacker.isAdjacentNonDiagonal(entity) && attacker.id !== self.playerId) {
-												attacker.follow(entity);
-											}
-										});
-							
-										self.unregisterEntityPosition(entity);
-										self.registerEntityPosition(entity);
-									}
-								});
-
-								entity.onRequestPath(function(x, y) {
-									var ignored = [entity], // Always ignore self
-										ignoreTarget = function(target) {
-											ignored.push(target);
-
-											// also ignore other attackers of the target entity
-											target.forEachAttacker(function(attacker) {
-												ignored.push(attacker);
-											});
-										};
-									
-									if(entity.hasTarget()) {
-										ignoreTarget(entity.target);
-									} else if(entity.previousTarget) {
-										// If repositioning before attacking again, ignore previous target
-										// See: tryMovingToADifferentTile()
-										ignoreTarget(entity.previousTarget);
-									}
-									
-									return self.findPath(entity, x, y, ignored);
-								});
-
-								entity.onDeath(function() {
-									log.info(entity.id + " is dead");
-							
-									if(entity instanceof Mob) {
-										// Keep track of where mobs die in order to spawn their dropped items
-										// at the right position later.
-										self.deathpositions[entity.id] = {x: entity.gridX, y: entity.gridY};
-									}
-
-									entity.isDying = true;
-									entity.setSprite(self.sprites[entity instanceof Mobs.Rat ? "rat" : "death"]);
-									entity.animate("death", 120, 1, function() {
-										log.info(entity.id + " was removed");
-
-										self.removeEntity(entity);
-										self.removeFromRenderingGrid(entity, entity.gridX, entity.gridY);
-									});
-
-									entity.forEachAttacker(function(attacker) {
-										attacker.disengage();
-									});
-									
-									if(self.player.target && self.player.target.id === entity.id) {
-										self.player.disengage();
-									}
-								
-									// Upon death, this entity is removed from both grids, allowing the player
-									// to click very fast in order to loot the dropped item and not be blocked.
-									// The entity is completely removed only after the death animation has ended.
-									self.removeFromEntityGrid(entity, entity.gridX, entity.gridY);
-									self.removeFromPathingGrid(entity.gridX, entity.gridY);
-								
-									if(self.camera.isVisible(entity)) {
-										self.audioManager.playSound("kill"+Math.floor(Math.random()*2+1));
-									}
-								
-									self.updateCursor();
-								});
-
-								entity.onHasMoved(function(entity) {
-									self.assignBubbleTo(entity); // Make chat bubbles follow moving entities
-								});
-
-								if(entity instanceof Mob) {
-									if(targetId) {
-										var player = self.getEntityById(targetId);
-										if(player) {
-											self.createAttackLink(entity, player);
-										}
-									}
-								}
-							}
-						}
-					}
-					catch(e) {
-						log.error(e);
-					}
-				} else {
-					log.debug("Character "+entity.id+" already exists. Don't respawn.");
-				}
-			});
-
-			self.client.onDespawnEntity(function(entityId) {
-				var entity = self.getEntityById(entityId);
-		
-				if(entity) {
-					log.info("Despawning " + Types.getKindAsString(entity.kind) + " (" + entity.id+ ")");
-					
-					if(entity.gridX === self.previousClickPosition.x
-					&& entity.gridY === self.previousClickPosition.y) {
-						self.previousClickPosition = {};
-					}
-					
-					if(entity instanceof Item) {
-						self.removeItem(entity);
-					} else if(entity instanceof Character) {
-						entity.forEachAttacker(function(attacker) {
-							if(attacker.canReachTarget()) {
-								attacker.hit();
-							}
-						});
-						entity.die();
-					} else if(entity instanceof Chest) {
-						entity.open();
-					}
-					
-					entity.clean();
-				}
-			});
-		
-			self.client.on(Types.Messages.BLINK, (itemId) => {
-				var item = self.getEntityById(itemId)
-				if(item) {
-					item.blink(150)
-				}
-			})
-
-			self.client.onEntityMove(function(id, x, y) {
-				var entity = null;
-
-				if(id !== self.playerId) {
-					entity = self.getEntityById(id);
-			
-					if(entity) {
-						if(self.player.isAttackedBy(entity)) {
-							self.tryUnlockingAchievement("COWARD");
-						}
-						entity.disengage();
-						entity.idle();
-						self.makeCharacterGoTo(entity, x, y);
-					}
-				}
-			});
-		
-			self.client.onEntityDestroy(function(id) {
-				var entity = self.getEntityById(id);
-				if(entity) {
-					if(entity instanceof Item) {
-						self.removeItem(entity);
-					} else {
-						self.removeEntity(entity);
-					}
-					log.debug("Entity was destroyed: "+entity.id);
-				}
-			});
-		
-			self.client.onPlayerMoveToItem(function(playerId, itemId) {
-				var player, item;
-
-				if(playerId !== self.playerId) {
-					player = self.getEntityById(playerId);
-					item = self.getEntityById(itemId);
-			
-					if(player && item) {
-						self.makeCharacterGoTo(player, item.gridX, item.gridY);
-					}
-				}
-			});
-		
-			self.client.onEntityAttack(function(attackerId, targetId) {
-				var attacker = self.getEntityById(attackerId),
-					target = self.getEntityById(targetId);
-			
-				if(attacker && target && attacker.id !== self.playerId) {
-					log.debug(attacker.id + " attacks " + target.id);
-					
-					if(attacker && target instanceof Player && target.id !== self.playerId && target.target && target.target.id === attacker.id && attacker.getDistanceToEntity(target) < 3) {
-						setTimeout(function() {
-							self.createAttackLink(attacker, target);
-						}, 200); // delay to prevent other players attacking mobs from ending up on the same tile as they walk towards each other.
-					} else {
-						self.createAttackLink(attacker, target);
-					}
-				}
-			});
-		
-			self.client.onPlayerDamageMob(function(mobId, points) {
-				var mob = self.getEntityById(mobId);
-				if(mob && points) {
-					self.infoManager.addDamageInfo(points, mob.x, mob.y - 15, "inflicted");
-				}
-			});
-		
-			self.client.onPlayerKillMob(function(kind, exp) {
-				const mobName = Types.getDisplayName(kind);
-
-				if(mobName === 'boss') {
-					self.showNotification("You killed the skeleton king");
-				} else {
-					if(_.include(['a', 'e', 'i', 'o', 'u'], mobName[0])) {
-						self.showNotification("You killed an " + mobName);
-					} else {
-						self.showNotification("You killed a " + mobName);
-					}
-				}
-
-				self.storage.incrementTotalKills()
-				self.player.gainExperience(exp)
-				setTimeout(() => {
-					self.infoManager.addExperienceInfo(exp, self.player.x, self.player.y - 15);
-				}, 200)
-				self.tryUnlockingAchievement("HUNTER");
-
-				if(kind === Types.Entities.RAT) {
-					self.storage.incrementRatCount();
-					self.tryUnlockingAchievement("ANGRY_RATS");
-				}
-				
-				if(kind === Types.Entities.SKELETON || kind === Types.Entities.SKELETON2) {
-					self.storage.incrementSkeletonCount();
-					self.tryUnlockingAchievement("SKULL_COLLECTOR");
-				}
-
-				if(kind === Types.Entities.BOSS) {
-					self.tryUnlockingAchievement("HERO");
-				}
-			})
-
-			self.player.on('level-up', () => {
-				setTimeout(() => {
-					self.audioManager.playSound("achievement")
-					self.infoManager.addLevelUpInfo(self.player.x, self.player.y - 15)
-				}, 400)
-			})
-		
-			self.client.onPlayerChangeHealth(function(points, isRegen) {
-				var player = self.player,
-					diff,
-					isHurt;
-			
-				if(player && !player.isDead && !player.invincible) {
-					isHurt = points <= player.hitPoints;
-					diff = points - player.hitPoints;
-					player.hitPoints = points;
-
-					if(player.hitPoints <= 0) {
-						player.die();
-					}
-					if(isHurt) {
-						player.hurt();
-						self.infoManager.addDamageInfo(diff, player.x, player.y - 15, "received");
-						self.audioManager.playSound("hurt");
-						self.storage.addDamage(-diff);
-						self.tryUnlockingAchievement("MEATSHIELD");
-						if(self.playerhurt_callback) {
-							self.playerhurt_callback();
-						}
-					} else if(!isRegen){
-						self.infoManager.addDamageInfo("+"+diff, player.x, player.y - 15, "healed");
-					}
-					self.updateBars();
-				}
-			});
-		
-			self.client.onPlayerChangeMaxHitPoints(function(hp) {
-				self.player.maxHitpoints = hp;
-				self.player.hitPoints = hp;
-				self.updateBars();
-			});
-		
-			self.client.onPlayerEquipItem(function(playerId, itemKind) {
-				var player = self.getEntityById(playerId),
-					itemName = Types.getKindAsString(itemKind);
-			
-				if(player) {
-					if(Types.isArmor(itemKind)) {
-						player.setSprite(self.sprites[itemName]);
-					} else if(Types.isWeapon(itemKind)) {
-						player.setWeaponName(itemName);
-					}
-				}
-			});
-		
-			self.client.onPlayerTeleport(function(id, x, y) {
-				var entity = null,
-					currentOrientation;
-
-				if(id !== self.playerId) {
-					entity = self.getEntityById(id);
-			
-					if(entity) {
-						currentOrientation = entity.orientation;
-					
-						self.makeCharacterTeleportTo(entity, x, y);
-						entity.setOrientation(currentOrientation);
-					
-						entity.forEachAttacker(function(attacker) {
-							attacker.disengage();
-							attacker.idle();
-							attacker.stop();
-						});
-					}
-				}
-			});
-		
-			self.client.onDropItem(function(item, mobId) {
-				var pos = self.getDeadMobPosition(mobId);
-			
-				if(pos) {
-					self.addItem(item, pos.x, pos.y);
-					self.updateCursor();
-				}
-			});
-		
-			self.client.onChatMessage(function(entityId, message) {
-				var entity = self.getEntityById(entityId);
-				self.createBubble(entityId, message);
-				self.assignBubbleTo(entity);
-				self.audioManager.playSound("chat");
-			});
-		
-			self.client.onPopulationChange(function(worldPlayers, totalPlayers) {
-				if(self.nbplayers_callback) {
-					self.nbplayers_callback(worldPlayers, totalPlayers);
-				}
-			});
-			
-			self.client.onDisconnected(function(message) {
-				if(self.player) {
-					self.player.die();
-				}
-				if(self.disconnect_callback) {
-					self.disconnect_callback(message);
-				}
-			});
-		
-			if (self.gamestart_callback) {
-				self.gamestart_callback();
-			}
-		
-			if(self.hasNeverStarted) {
-				self.start();
-				if (started_callback) {
-					started_callback();
-				}
-			}
-		});
-	}
 
 	/**
 	 * Links two entities in an attacker<-->target relationship.
@@ -1529,8 +1469,8 @@ export default class Game {
 	 * Sends a "hello" message to the server, as a way of initiating the player connection handshake.
 	 * @see GameClient.sendHello
 	 */
-	sendHello() {
-		this.client.sendHello(this.player);
+	sendHello(ident, secret) {
+		this.client.sendHello(ident, secret);
 	}
 
 	/**
@@ -1654,7 +1594,7 @@ export default class Game {
 	 * @param {Function} callback The function to call back (must accept one entity argument).
 	 */
 	forEachEntity(callback) {
-		_.each(this.entities, function(entity) {
+		_.each(this.entities, (entity) => {
 			callback(entity);
 		});
 	}
@@ -1664,7 +1604,7 @@ export default class Game {
 	 * @see forEachEntity
 	 */
 	forEachMob(callback) {
-		_.each(this.entities, function(entity) {
+		_.each(this.entities, (entity) => {
 			if(entity instanceof Mob) {
 				callback(entity);
 			}
@@ -1677,13 +1617,12 @@ export default class Game {
 	 * Note: This is used by the Renderer to know in which order to render entities.
 	 */
 	forEachVisibleEntityByDepth(callback) {
-		var self = this,
-			m = this.map;
+		var m = this.map;
 	
-		this.camera.forEachVisiblePosition(function(x, y) {
+		this.camera.forEachVisiblePosition((x, y) => {
 			if(!m.isOutOfBounds(x, y)) {
-				if(self.renderingGrid[y][x]) {
-					_.each(self.renderingGrid[y][x], function(entity) {
+				if(this.renderingGrid[y][x]) {
+					_.each(this.renderingGrid[y][x], (entity) => {
 						callback(entity);
 					});
 				}
@@ -1697,7 +1636,7 @@ export default class Game {
 	forEachVisibleTileIndex(callback, extra) {
 		var m = this.map;
 	
-		this.camera.forEachVisiblePosition(function(x, y) {
+		this.camera.forEachVisiblePosition((x, y) => {
 			if(!m.isOutOfBounds(x, y)) {
 				callback(m.GridPositionToTileIndex(x, y) - 1);
 			}
@@ -1708,13 +1647,12 @@ export default class Game {
 	 * 
 	 */
 	forEachVisibleTile(callback, extra) {
-		var self = this,
-			m = this.map;
+		var m = this.map;
 	
 		if(m.isLoaded) {
-			this.forEachVisibleTileIndex(function(tileIndex) {
+			this.forEachVisibleTileIndex((tileIndex) => {
 				if(_.isArray(m.data[tileIndex])) {
-					_.each(m.data[tileIndex], function(id) {
+					_.each(m.data[tileIndex], (id) => {
 						callback(id-1, tileIndex);
 					});
 				}
@@ -1734,7 +1672,7 @@ export default class Game {
 	 */
 	forEachAnimatedTile(callback) {
 		if(this.animatedTiles) {
-			_.each(this.animatedTiles, function(tile) {
+			_.each(this.animatedTiles, (tile) => {
 				callback(tile);
 			});
 		}
@@ -1792,7 +1730,7 @@ export default class Game {
 
 		if(_.size(items) > 0) {
 			// If there are potions/burgers stacked with equipment items on the same tile, always get expendable items first.
-			_.each(items, function(i) {
+			_.each(items, (i) => {
 				if(Types.isExpendableItem(i.kind)) {
 					item = i;
 				};
@@ -1835,8 +1773,7 @@ export default class Game {
 	 * The path will pass through any entity present in the ignore list.
 	 */
 	findPath(character, x, y, ignoreList) {
-		var self = this,
-			grid = this.pathingGrid,
+		var grid = this.pathingGrid,
 			path = [],
 			isPlayer = (character === this.player);
 	
@@ -1846,8 +1783,8 @@ export default class Game {
 	
 		if(this.pathfinder && character) {
 			if(ignoreList) {
-				_.each(ignoreList, function(entity) {
-					self.pathfinder.ignoreEntity(entity);
+				_.each(ignoreList, (entity) => {
+					this.pathfinder.ignoreEntity(entity);
 				});
 			}
 		
@@ -1969,7 +1906,7 @@ export default class Game {
 			list = this.entityGrid[Y][X],
 			result = false;
 		
-		_.each(list, function(entity) {
+		_.each(list, (entity) => {
 			if(entity instanceof Mob && entity.id !== mob.id) {
 				result = true;
 			}
@@ -1978,11 +1915,10 @@ export default class Game {
 	}
 	
 	getFreeAdjacentNonDiagonalPosition(entity) {
-		var self = this,
-			result = null;
+		var result = null;
 		
-		entity.forEachAdjacentNonDiagonalPosition(function(x, y, orientation) {
-			if(!result && !self.map.isColliding(x, y) && !self.isMobAt(x, y)) {
+		entity.forEachAdjacentNonDiagonalPosition((x, y, orientation) => {
+			if(!result && !this.map.isColliding(x, y) && !this.isMobAt(x, y)) {
 				result = {x: x, y: y, o: orientation};
 			}
 		});
@@ -2046,8 +1982,7 @@ export default class Game {
 	 * 
 	 */
 	onCharacterUpdate(character) {
-		var time = this.currentTime,
-			self = this;
+		var time = this.currentTime
 		
 		// If mob has finished moving to a different tile in order to avoid stacking, attack again from the new position.
 		if(character.previousTarget && !character.isMoving() && character instanceof Mob) {
@@ -2094,9 +2029,7 @@ export default class Game {
 		}
 	}
 
-	/**
-	 * 
-	 */
+
 	isZoningTile(x, y) {
 		var c = this.camera;
 	
@@ -2109,9 +2042,6 @@ export default class Game {
 		return false;
 	}
 
-	/**
-	 * 
-	 */
 	getZoningOrientation(x, y) {
 		var orientation = "",
 			c = this.camera;
@@ -2158,7 +2088,7 @@ export default class Game {
 			this.endZoning();
 			
 			// Force immediate drawing of all visible entities in the new zone
-			this.forEachVisibleEntityByDepth(function(entity) {
+			this.forEachVisibleEntityByDepth((entity) => {
 				entity.setDirty();
 			});
 		}
@@ -2197,6 +2127,9 @@ export default class Game {
 		this.initAnimatedTiles();
 		this.renderer.renderStaticCanvases();
 	}
+
+
+
 
 	resetCamera() {
 		this.camera.focusEntity(this.player);
@@ -2248,29 +2181,35 @@ export default class Game {
 		}
 	}
 
-	restart() {
-		log.debug("Beginning restart");
-	
-		this.entities = {};
-		this.initEntityGrid();
-		this.initPathingGrid();
-		this.initRenderingGrid();
 
-		this.player = new Warrior("player", this.username);
-		this.initPlayer();
-	
-		this.started = true;
-		this.client.enable();
-		this.sendHello();
-	
-		this.storage.incrementRevives();
-		
+
+
+	restart(hero) {
+		log.debug("Beginning restart")
+
+		this.entities = {}
+		this.initEntityGrid()
+		this.initPathingGrid()
+		this.initRenderingGrid()
+
+		this.player = new Player('player', 'TODO player name', Types.Entities.WARRIOR)
+		this.initPlayer()
+
+		this.started = true
+		this.client.enable()
+		this.sendHello(hero.ident, hero.secret)
+
+		this.storage.incrementRevives()
+
 		if(this.renderer.mobile || this.renderer.tablet) {
-			this.renderer.clearScreen(this.renderer.context);
+			this.renderer.clearScreen(this.renderer.context)
 		}
-	
-		log.debug("Finished restart");
+
+		log.debug("Finished restart")
 	}
+
+
+
 
 	onGameStart(callback) {
 		this.gamestart_callback = callback;
@@ -2323,7 +2262,7 @@ export default class Game {
 
 	updateBars() {
 		if(this.player && this.playerhp_callback) {
-			this.playerhp_callback(this.player.hitPoints, this.player.maxHitpoints);
+			this.playerhp_callback(this.player.hitpoints, this.player.maxHitpoints);
 		}
 	}
 
@@ -2363,16 +2302,15 @@ export default class Game {
 	}
 
 	removeObsoleteEntities() {
-		var nb = _.size(this.obsoleteEntities),
-			self = this;
+		var nb = _.size(this.obsoleteEntities)
 	
 		if(nb > 0) {
-			_.each(this.obsoleteEntities, function(entity) {
-				if(entity.id != self.player.id) { // never remove yourself
-					self.removeEntity(entity);
+			_.each(this.obsoleteEntities, (entity) => {
+				if(entity.id != this.player.id) { // never remove yourself
+					this.removeEntity(entity);
 				}
 			});
-			log.debug("Removed "+nb+" entities: "+_.pluck(_.reject(this.obsoleteEntities, function(id) { return id === self.player.id }), 'id'));
+			log.debug("Removed "+nb+" entities: "+_.pluck(_.reject(this.obsoleteEntities, (id) => { return id === this.player.id }), 'id'));
 			this.obsoleteEntities = null;
 		}
 	}
@@ -2425,7 +2363,7 @@ export default class Game {
 		for(var i = x-r, max_i = x+r; i <= max_i; i += 1) {
 			for(var j = y-r, max_j = y+r; j <= max_j; j += 1) {
 				if(!this.map.isOutOfBounds(i, j)) {
-					_.each(this.renderingGrid[j][i], function(entity) {
+					_.each(this.renderingGrid[j][i], (entity) => {
 						callback(entity);
 					});
 				}
@@ -2436,7 +2374,7 @@ export default class Game {
 	checkOtherDirtyRects(r1, source, x, y) {
 		var r = this.renderer;
 		
-		this.forEachEntityAround(x, y, 2, function(e2) {
+		this.forEachEntityAround(x, y, 2, (e2) => {
 			if(source && source.id && e2.id === source.id) {
 				return;
 			}
@@ -2449,7 +2387,7 @@ export default class Game {
 		});
 		
 		if(source && !(source.hasOwnProperty("index"))) {
-			this.forEachAnimatedTile(function(tile) {
+			this.forEachAnimatedTile((tile) => {
 				if(!tile.isDirty) {
 					var r2 = r.getTileBoundingRect(tile);
 					if(r.isIntersecting(r1, r2)) {

@@ -39,7 +39,7 @@ export default class Character extends Entity {
 		this.attackers = {};
 	
 		// Health
-		this.hitPoints = 0;
+		this.hitpoints = 0;
 		this.maxHitpoints = 0;
 	
 		// Modes
@@ -57,7 +57,7 @@ export default class Character extends Entity {
 	}
 
 	getCurHitpoints() {
-		return this.hitPoints
+		return this.hitpoints
 	}
 
 	getMaxHitpoints() {
@@ -66,7 +66,7 @@ export default class Character extends Entity {
 
 	setMaxHitPoints(hp) {
 		this.maxHitpoints = hp;
-		this.hitPoints = hp;
+		this.hitpoints = hp;
 	}
 
 	setDefaultAnimation() {
@@ -524,9 +524,18 @@ export default class Character extends Entity {
 		return false;
 	}
 
-	/**
-	 * 
-	 */
+	setCurHitpoints(points: number) {
+		const isHurt = points < this.hitpoints
+		this.hitpoints = points
+		if(isHurt) {
+			this.hurt()
+		}
+		if(this.hitpoints <= 0) {
+			this.die()
+		}
+		this.emit('update')
+	}
+
 	die() {
 		this.removeTarget();
 		this.isDead = true;
@@ -548,11 +557,9 @@ export default class Character extends Entity {
 	}
 
 	hurt() {
-		var self = this;
-	
-		this.stopHurting();
-		this.sprite = this.hurtSprite;
-		this.hurting = setTimeout(this.stopHurting.bind(this), 75);
+		this.stopHurting()
+		this.sprite = this.hurtSprite
+		this.hurting = setTimeout(this.stopHurting.bind(this), 75)
 	}
 
 	stopHurting() {
@@ -596,7 +603,7 @@ export default class Character extends Entity {
 	private moveSpeed: any
 	private idleSpeed: any
 	private orientation: any
-	protected hitPoints: any
+	protected hitpoints: any
 	protected maxHitpoints: any
 	private movement: any
 }

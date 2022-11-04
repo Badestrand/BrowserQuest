@@ -51,7 +51,7 @@ export default function CharacterScreen({game, player, onClose}: {game: Game, pl
 						<div className="primary">
 							<span>
 								<span>{attr[0]}</span>
-								<span>{player.getFixedAttrPoints(attr[1] as "str" | "dex" | "vit" | "ene")}</span>
+								<span>{player.getTotalAttrPoints(attr[1] as "str" | "dex" | "vit" | "ene")}</span>
 							</span>
 							{unspentPoints>0 && (
 							<button type="button" onClick={() => {

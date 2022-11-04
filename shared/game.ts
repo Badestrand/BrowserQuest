@@ -1,6 +1,8 @@
 // From https://d2.lc/AB/wiki/indexce93.html?title=Class, atr
 const AllCharacterClasses: Array<CharacterClassInfo> = [{
+	id: 'barbarian',
 	name: 'Barbarian',
+	isAvailable: true,
 	attributes: {
 		str: 30,
 		dex: 20,
@@ -18,7 +20,9 @@ const AllCharacterClasses: Array<CharacterClassInfo> = [{
 	lifePerVit: 4.0,
 	manaPerEne: 1.0,
 }, {
+	id: 'amazon',
 	name: 'Amazon',
+	isAvailable: false,
 	attributes: {
 		str: 20,
 		dex: 25,
@@ -36,7 +40,9 @@ const AllCharacterClasses: Array<CharacterClassInfo> = [{
 	lifePerVit: 3.0,
 	manaPerEne: 1.5,
 }, {
+	id: 'name',
 	name: 'Sorceress',
+	isAvailable: false,
 	attributes: {
 		str: 10,
 		dex: 25,

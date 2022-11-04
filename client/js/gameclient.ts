@@ -1,11 +1,12 @@
 import * as _ from 'underscore'
 import * as $ from 'jquery'
 import EventEmitter from 'eventemitter3'
+import {io} from 'socket.io-client'
 
+import server from './server'
 import log from './log'
 import Player from './player'
 import EntityFactory from './entityfactory'
-import BISON from './lib/bison'
 import * as Types from '../../shared/gametypes'
 
 
@@ -17,19 +18,15 @@ import * as Types from '../../shared/gametypes'
 	  always was only one but with the listeners it may crash things if there are some from old states.
 */
 
-export default class GameClient extends EventEmitter {
-	constructor(host, port) {
-		super()
-		this.connection = null;
-		this.host = host;
-		this.port = port;
 
-		this.connected_callback = null;
-		this.spawn_callback = null;
-		this.movement_callback = null;
-	
+// TODO: Fuse this and ./server.ts
+export default class GameClient extends EventEmitter {
+	constructor() {
+		super()
+		// this.connection = null;
+
 		this.handlers = [];
-		this.handlers[Types.Messages.WELCOME] = this.receiveWelcome;
+		// this.handlers[Types.Messages.WELCOME] = this.receiveWelcome;
 		this.handlers[Types.Messages.MOVE] = this.receiveMove;
 		this.handlers[Types.Messages.LOOTMOVE] = this.receiveLootMove;
 		this.handlers[Types.Messages.ATTACK] = this.receiveAttack;
@@ -51,88 +48,62 @@ export default class GameClient extends EventEmitter {
 		// this.handlers[Types.Messages.GAINEXP] = this.receiveExperience;
 	
 		this.enable();
+
+		// this.connection = io(url, {
+		// 	forceNew: true
+		// })
+		// this.connection.on('connect', (socket) => {
+		// 	log.info("Connected to server " + url)
+		// 	if(self.connected_callback) {
+		// 		self.connected_callback()
+		// 	}
+		// });
+
+		this.connection = server.connection()
+
+		this.connection.on('message', (data) => {
+			console.log('received message', data)
+			if(data === 'timeout') {
+				this.isTimeout = true
+				return
+			}
+			this.receiveMessage(data)
+		})
+
+		/*this.connection.onerror = function(e) {
+			log.error(e, true);
+		};*/
+
+		this.connection.on('disconnect', () => {
+			log.debug("Connection closed")
+
+			if(this.disconnected_callback) {
+				if(this.isTimeout) {
+					this.disconnected_callback("You have been disconnected for being inactive for too long.")
+				} else {
+					this.disconnected_callback("The connection to BrowserQuest has been lost.")
+				}
+			}
+		})
 	}
+
 
 	enable() {
 		this.isListening = true;
 	}
 
+
 	disable() {
 		this.isListening = false;
 	}
-	
-	connect(dispatcherMode) {
-		 var url = "http://" + this.host + ":" + this.port + "/",
-			self = this;
 
-
-		this.connection = (window as any).io(url, {'force new connection':true});
-		this.connection.on('connection', function(socket){
-			log.info("Connected to server " + url);
-		});
-
-		/******
-			Dispatcher is a system where you could have another server you connect to first
-			which then provides an IP and port for the client to connect to the game server
-		 ******/
-		if(dispatcherMode) {
-
-			this.connection.emit("dispatch", true)
-
-			this.connection.on("dispatched", function(reply) {
-				console.log("Dispatched: ")
-				console.log(reply)
-				if(reply.status === 'OK') {
-					self.dispatched_callback(reply.host, reply.port);
-				} else if(reply.status === 'FULL') {
-					console.log("BrowserQuest is currently at maximum player population. Please retry later.");
-				} else {
-					console.log("Unknown error while connecting to BrowserQuest.");
-				}
-			});
-			
-		} else {
-
-			this.connection.on("message", function(data) {
-
-				if(data === "go") {
-					if(self.connected_callback) {
-						self.connected_callback();
-					}
-					return;
-				}
-				if(data === 'timeout') {
-					self.isTimeout = true;
-					return;
-				}
-				
-				self.receiveMessage(data);
-			});
-
-			/*this.connection.onerror = function(e) {
-				log.error(e, true);
-			};*/
-
-			this.connection.on("disconnect", function() {
-				log.debug("Connection closed");
-				$('#container').addClass('error');
-				
-				if(self.disconnected_callback) {
-					if(self.isTimeout) {
-						self.disconnected_callback("You have been disconnected for being inactive for too long.");
-					} else {
-						self.disconnected_callback("The connection to BrowserQuest has been lost.");
-					}
-				}
-			});
-		}
-	}
 
 	sendMessage(json) {
 		if(this.connection.connected) {
 			this.connection.emit("message", json);
 		}
 	}
+
 
 	receiveMessage(message) {
 	
@@ -152,6 +123,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveAction(data) {
 		var action = data[0];
 		if(this.handlers[action] && _.isFunction(this.handlers[action])) {
@@ -162,6 +134,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveActionBatch(actions) {
 		var self = this;
 
@@ -170,17 +143,17 @@ export default class GameClient extends EventEmitter {
 		});
 	}
 
+
 	receiveWelcome(data) {
 		var id = data[1],
-			name = data[2],
-			x = data[3],
-			y = data[4],
-			hp = data[5];
+			x = data[2],
+			y = data[3]
 	
 		if(this.welcome_callback) {
-			this.welcome_callback(id, name, x, y, hp);
+			this.welcome_callback(id, x, y);
 		}
 	}
+
 
 	receiveMove(data) {
 		var id = data[1],
@@ -192,6 +165,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveLootMove(data) {
 		var id = data[1], 
 			item = data[2];
@@ -201,6 +175,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveAttack(data) {
 		var attacker = data[1], 
 			target = data[2];
@@ -209,6 +184,7 @@ export default class GameClient extends EventEmitter {
 			this.attack_callback(attacker, target);
 		}
 	}
+
 
 	receiveSpawn(data) {
 		var id = data[1],
@@ -260,6 +236,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveDespawn(data) {
 		var id = data[1];
 	
@@ -267,6 +244,7 @@ export default class GameClient extends EventEmitter {
 			this.despawn_callback(id);
 		}
 	}
+
 
 	receiveHealth(data) {
 		var points = data[1],
@@ -281,6 +259,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveChat(data) {
 		var id = data[1],
 			text = data[2];
@@ -290,6 +269,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveEquipItem(data) {
 		var id = data[1],
 			itemKind = data[2];
@@ -298,6 +278,7 @@ export default class GameClient extends EventEmitter {
 			this.equip_callback(id, itemKind);
 		}
 	}
+
 
 	receiveDrop(data) {
 		var mobId = data[1],
@@ -313,6 +294,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveTeleport(data) {
 		var id = data[1],
 			x = data[2],
@@ -323,6 +305,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveDamage(data) {
 		var id = data[1],
 			dmg = data[2];
@@ -331,6 +314,7 @@ export default class GameClient extends EventEmitter {
 			this.dmg_callback(id, dmg);
 		}
 	}
+
 
 	receivePopulation(data) {
 		var worldPlayers = data[1],
@@ -341,6 +325,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveKill(data) {
 		const mobKind = data[1]
 		const exp = data[2]
@@ -350,6 +335,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveList(data) {
 		data.shift();
 	
@@ -357,6 +343,7 @@ export default class GameClient extends EventEmitter {
 			this.list_callback(data);
 		}
 	}
+
 
 	receiveDestroy(data) {
 		var id = data[1];
@@ -366,6 +353,7 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveHitPoints(data) {
 		var maxHp = data[1];
 	
@@ -374,10 +362,13 @@ export default class GameClient extends EventEmitter {
 		}
 	}
 
+
 	receiveBlink(data) {
 		var id = data[1];
 		this.emit(Types.Messages.BLINK, id)
 	}
+
+
 
 	// receiveExperience(data) {
 	// 	const exp = data[0]
@@ -388,9 +379,9 @@ export default class GameClient extends EventEmitter {
 		this.dispatched_callback = callback;
 	}
 
-	onConnected(callback) {
-		this.connected_callback = callback;
-	}
+	// onConnected(callback) {
+	// 	this.connected_callback = callback;
+	// }
 	
 	onDisconnected(callback) {
 		this.disconnected_callback = callback;
@@ -472,65 +463,46 @@ export default class GameClient extends EventEmitter {
 		this.hp_callback = callback;
 	}
 
-	sendHello(player) {
-		this.sendMessage([Types.Messages.HELLO,
-						  player.name,
-						  Types.getKindFromString(player.getSpriteName()),
-						  Types.getKindFromString(player.getWeaponName())]);
-	}
+
 
 	sendMove(x, y) {
-		this.sendMessage([Types.Messages.MOVE,
-						  x,
-						  y]);
+		this.sendMessage([Types.Messages.MOVE, x, y]);
 	}
 
 	sendLootMove(item, x, y) {
-		this.sendMessage([Types.Messages.LOOTMOVE,
-						  x,
-						  y,
-						  item.id]);
+		this.sendMessage([Types.Messages.LOOTMOVE, x, y, item.id]);
 	}
 
 	sendAggro(mob) {
-		this.sendMessage([Types.Messages.AGGRO,
-						  mob.id]);
+		this.sendMessage([Types.Messages.AGGRO, mob.id]);
 	}
 
 	sendAttack(mob) {
-		this.sendMessage([Types.Messages.ATTACK,
-						  mob.id]);
+		this.sendMessage([Types.Messages.ATTACK, mob.id]);
 	}
 
 	sendHit(mob) {
-		this.sendMessage([Types.Messages.HIT,
-						  mob.id]);
+		this.sendMessage([Types.Messages.HIT, mob.id]);
 	}
 
 	sendHurt(mob) {
-		this.sendMessage([Types.Messages.HURT,
-						  mob.id]);
+		this.sendMessage([Types.Messages.HURT, mob.id]);
 	}
 
 	sendChat(text) {
-		this.sendMessage([Types.Messages.CHAT,
-						  text]);
+		this.sendMessage([Types.Messages.CHAT, text]);
 	}
 
 	sendLoot(item) {
-		this.sendMessage([Types.Messages.LOOT,
-						  item.id]);
+		this.sendMessage([Types.Messages.LOOT, item.id]);
 	}
 
 	sendTeleport(x, y) {
-		this.sendMessage([Types.Messages.TELEPORT,
-						  x,
-						  y]);
+		this.sendMessage([Types.Messages.TELEPORT, x, y]);
 	}
 
 	sendWho(ids) {
-		ids.unshift(Types.Messages.WHO);
-		this.sendMessage(ids);
+		this.sendMessage([Types.Messages.WHO, ...ids]);
 	}
 
 	sendZone() {
@@ -550,10 +522,9 @@ export default class GameClient extends EventEmitter {
 	}
 
 
+
 	public connection: any
-	public host: any
-	public port: any
-	public connected_callback: any
+	// public connected_callback: any
 	public spawn_callback: any
 	public movement_callback: any
 	public despawn_callback: any

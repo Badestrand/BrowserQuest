@@ -5,23 +5,32 @@ import * as React from 'react'
 import {useState, useEffect, useRef} from 'react'
 import ReactDOM from 'react-dom/client'
 
+import server from './server'
 import log from './log'
-import storage from './storage2'
 import Game from './game'
-import Storage from './storage'
+import Renderer from './renderer'
 import config from './config'
 import * as Detect from './detect'
 import CharacterScreen from './ui/CharacterScreen'
 import {sleep, useForceUpdate} from './util'
 
+import {AllCharacterClasses, getLevelFromExperience} from '../../shared/game'
+
 import '../css/main.less'
 
+
+
+type HeroAccessInfo = {
+	ident: string
+	secret: string
+}
 
 
 
 
 function NewCharacterScreen({onPlay, onHelp}: any) {
 	const inputRef = useRef<HTMLInputElement>()
+	const [charClass, setCharClass] = useState<CharacterClassInfo>(AllCharacterClasses[0])
 	const [name, setName] = useState<string>('')
 	const [loading, setLoading] = useState<boolean>(false)
 
@@ -35,13 +44,18 @@ function NewCharacterScreen({onPlay, onHelp}: any) {
 
 	const isValidName = name !== ''
 
-	const onSubmit = (event) => {
-		event.preventDefault()
-		if (isValidName) {
+	const onSubmit = async () => {
+		if (isValidName && !loading) {
 			setLoading(true)
-			onPlay(name).finally(() => setLoading(false))
+			try {
+				const hero = await server.createPlayer(charClass.id, name)
+				onPlay(hero)
+				setLoading(false)
+			}
+			catch (err) {
+				alert(err.message)
+			}
 		}
-		return false
 	}
 
 	return (
@@ -57,14 +71,22 @@ function NewCharacterScreen({onPlay, onHelp}: any) {
 				<div className="bottom"/>
 			</div>
 
-			<div id="character" className="disabled">
-				<div/>
-			</div>
+			<ul className="charclasses">
+				{AllCharacterClasses.map((cc) => (
+				<li key={cc.id} className={(cc.isAvailable? '' : ' disabled')+(cc===charClass? ' selected' : '')} onClick={e => cc.isAvailable && setCharClass(cc)}>
+					<div/>
+					<p>
+						{cc.name}
+						{!cc.isAvailable && (<span><br/>(soon)</span>)}
+					</p>
+				</li>
+				))}
+			</ul>
 
-			<form onSubmit={onSubmit}>
+			<form onSubmit={(event) => {event.preventDefault(); onSubmit(); return false}}>
 				<input ref={inputRef} type="text" placeholder="Name your character" maxLength={15} value={name} onChange={e => setName(e.target.value)}/>
 				<br/>
-				<button type="submit" className={'play button'+(loading? ' loading' : '')} disabled={!isValidName}>
+				<button type="submit" className={'play button'+(loading? ' loading' : '')} disabled={loading || !isValidName}>
 					<div></div>
 					{loading && (
 					<img src="img/common/spinner.gif" alt=""/>
@@ -79,14 +101,18 @@ function NewCharacterScreen({onPlay, onHelp}: any) {
 
 
 function LoadCharacterScreen({onPlay, onReset, onHelp, data}: any) {
-	const [loading, setLoading] = useState<boolean>(false)
+	const loading = false
+	const [img, setImg] = useState<string>(null)
 
 	const onSubmit = (event) => {
 		event.preventDefault()
-		setLoading(true)
-		onPlay().finally(() => setLoading(false))
+		onPlay()
 		return false
 	}
+
+	useEffect(() => {
+		Renderer.getPlayerImage2(data.armorId, data.weaponId).then(setImg)
+	}, [data.armor, data.weapon])
 
 	return (
 		<article id="loadcharacter">
@@ -101,8 +127,10 @@ function LoadCharacterScreen({onPlay, onReset, onHelp, data}: any) {
 				<div className="bottom"/>
 			</div>
 
-			<img id="playerimage" src={data.player.image}/>
-			<div id="playername" className="stroke">{data.player.name} - Level {data.player.level}</div>
+			<img className="playerimage" src={img}/>
+			<div className="playername stroke">
+				{data.name} - {_.findWhere(AllCharacterClasses, {id: data.charClassId}).name} level {getLevelFromExperience(data.experience)}
+			</div>
 
 			<button type="button" className={'play button'+(loading? ' loading' : '')} onClick={onSubmit}>
 				<div></div>
@@ -196,10 +224,18 @@ function DisconnectInfo({message, onReload}: any) {
 
 
 
-function IntroScreen({heroInfo, onStartNewGame, onLoadGame}: any) {
-	const [mode, setMode] = useState<string>(heroInfo? 'load' : 'create')
+/*function IntroScreen({hero, onStartNewGame, onLoadGame}: any) {
+	const [mode, setMode] = useState<string>(hero? 'load' : 'create')
 	const [next, setNext] = useState<string>(null)
 	const [trans, setTrans] = useState<string>(null)
+
+	useEffect(() => {
+		if (hero === null) {
+			setMode('create')
+		} else {
+			setMode('load')
+		}
+	}, [Boolean(hero)])
 
 	const transitionTo = (newMode: string, nextMode: string=null) => {
 		const TRANSITION_DURATION = 0.5
@@ -215,7 +251,7 @@ function IntroScreen({heroInfo, onStartNewGame, onLoadGame}: any) {
 	}
 
 	const onReset = () => {
-		storage.clear()
+		deleteSavedHeroAccess()
 		transitionTo('create')
 	}
 
@@ -231,7 +267,7 @@ function IntroScreen({heroInfo, onStartNewGame, onLoadGame}: any) {
 				<div className="parchment-middle">
 					{mode === 'create'? (
 					<NewCharacterScreen
-						onPlay={(name) => onStartNewGame({name})}
+						onPlay={onStartNewGame}
 						onHelp={() => transitionTo('about', 'create')}
 					/>
 					)
@@ -240,7 +276,7 @@ function IntroScreen({heroInfo, onStartNewGame, onLoadGame}: any) {
 						onPlay={() => onLoadGame()}
 						onReset={() => transitionTo('confirm')}
 						onHelp={() => transitionTo('about', 'load')}
-						data={heroInfo}
+						data={hero}
 					/>
 					)
 					: mode === 'confirm'? (
@@ -261,7 +297,102 @@ function IntroScreen({heroInfo, onStartNewGame, onLoadGame}: any) {
 			</section>
 		</>
 	)
+}*/
+
+
+
+
+
+function IntroScreen2({onStart}: {onStart: (hero: HeroInfo)=>void}) {
+	const [loading, setLoading] = useState<boolean>(false)
+	const [hero, setHero] = useState<HeroInfo>(null)
+	const [mode, setMode] = useState<string>('create')
+	const [next, setNext] = useState<string>(null)
+	const [trans, setTrans] = useState<string>(null)
+
+
+	const transitionTo = (newMode: string, nextMode: string=null) => {
+		const TRANSITION_DURATION = 0.5
+
+		setMode(null)
+		setTrans('confirm')
+		setNext(nextMode)
+
+		setTimeout(() => {
+			setMode(newMode)
+			setTrans(null)
+		}, TRANSITION_DURATION * 1000)
+	}
+
+
+	useEffect(() => {
+		const heroAccess = getSavedHeroAccess()
+		if (heroAccess) {
+			setLoading(true)
+			server.previewPlayer(heroAccess.ident, heroAccess.secret)
+				.then((hero) => {
+					setHero(hero)
+					setMode('load')
+				})
+				.finally(() => {
+					setLoading(false)
+				})
+		}
+	}, [])
+
+
+	return (
+		<>
+			<h1 id="logo">
+				<span id="logosparks"/>
+			</h1>
+
+			<section id="parchment" className={trans? 'animate' : ''}>
+				<div className="parchment-left"/>
+
+				<div className="parchment-middle">
+					{loading? (
+						<p>Loading...</p>
+					)
+					: mode === 'create'? (
+					<NewCharacterScreen
+						onPlay={onStart}
+						onHelp={() => transitionTo('about', 'create')}
+					/>
+					)
+					: mode === 'load'? (
+					<LoadCharacterScreen
+						data={hero}
+						onPlay={() => onStart(hero)}
+						onReset={() => transitionTo('confirm')}
+						onHelp={() => transitionTo('about', 'load')}
+					/>
+					)
+					: mode === 'confirm'? (
+					<ResetCharacterScreen
+						onCancel={() => transitionTo('load')}
+						onReset={() => {
+							deleteSavedHeroAccess()
+							setHero(null)
+							transitionTo('create')
+						}}
+					/>
+					)
+					: mode === 'about'? (
+					<AboutScreen
+						onClose={() => transitionTo(next)}
+					/>
+					)
+					: null}
+				</div>
+
+				<div className="parchment-right"/>
+			</section>
+		</>
+	)
 }
+
+
 
 
 
@@ -424,15 +555,6 @@ function NotificationsElement({game}: any) {
 		</div>
 	)
 }
-
-
-// type KeyName = 
-// 	'ArrowUp' | 'ArrowRight' | 'ArrowDown' | 'ArrowLeft' |
-// 	'Digit1' | 'Digit2' | 'Digit3' | 'Digit4' | 'Digit5' | 'Digit6' | 'Digit7' | 'Digit8' | 'Digit9' | 'Digit0' |
-// 	'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' | 'F11' | 'F12' |
-// 	'KeyA' | 'KeyB' | 'KeyC' | 'KeyD' | 'KeyE' | 'KeyF' | 'KeyG' | 'KeyH' | 'KeyI' | 'KeyJ' | 'KeyK' | 'KeyL' | 'KeyM' | 'KeyN' | 'KeyO' | 'KeyP' | 'KeyQ' | 'KeyR' | 'KeyS' | 'KeyT' | 'KeyU' | 'KeyV' | 'KeyW' | 'KeyX' | 'KeyY' | 'KeyZ' |
-// 	'Comma' | 'Period' | 'Slash' | 'Backquote' | 'BracketLeft' | 'BracketRight' | 'Backslash' | 'Semicolon' | 'Quote' |
-// 	'Escape' | 'Space' | 'Enter' | 'Tab' | 'ShiftLeft' | 'ShiftRight' | 'ControlLeft' | 'AltLeft' | 'MetaLeft' | 'MetaRight' | 'AltRight'
 
 
 
@@ -714,49 +836,59 @@ class ActionBar extends React.Component<any, any> {
 
 
 
-function GameScreen({game, name}: any) {
-	const setMouseCoordinates = (event) => {
-		const gamePos = document.getElementById('foreground').getBoundingClientRect()
-		const scale = game.renderer.getScaleFactor()
-		const width = game.renderer.getWidth()
-		const height = game.renderer.getHeight()
-		const x = event.pageX - gamePos.left - (game.renderer.mobile ? 0 : 5 * scale)
-		const y = event.pageY - gamePos.top - (game.renderer.mobile ? 0 : 7 * scale)
-		game.mouse.x = Math.max(0, Math.min(width-1, x))
-		game.mouse.y = Math.max(0, Math.min(height-1, y))
-		game.movecursor()
-	}
+function GameScreen({hero}: {hero: HeroInfo}) {
+	const [game, setGame] = useState<Game>(null)
+
 
 	useEffect(() => {
-		game.setup('#bubbles', document.getElementById("entities"), document.getElementById("background"), document.getElementById("foreground"), document.getElementById("chatinput"))
-		game.setServerOptions(config.host, config.port)
-		game.setStorage(new Storage())
-		game.loadMap()
-		// game.onGameStart(() => {})
-		game.run()
-		game.onPlayerDeath(() => {
+		const newGame = new Game(
+			'#bubbles',
+			document.getElementById("entities"),
+			document.getElementById("background"),
+			document.getElementById("foreground")
+		)
+
+		newGame.readyPromise.then(() => {
+			newGame.enter(hero).then(() => {
+				setGame(newGame)
+			})
+		})
+
+		newGame.onPlayerDeath(() => {
 			showParchment(<DeathInfo onRevive={() => {
-				game.audioManager.playSound("revive")
-				game.restart()
+				newGame.audioManager.playSound("revive")
+				newGame.restart(hero)
 				hideParchment()
 			}}/>)
 		})
-		game.onDisconnect((message) => {
+
+		newGame.onDisconnect((message) => {
 			showParchment(<DisconnectInfo message={message} onReload={() => {
 				window.location.reload()
 			}}/>)
 		})
 
+		const setMouseCoordinates = (event) => {
+			const gamePos = document.getElementById('foreground').getBoundingClientRect()
+			const scale = newGame.renderer.getScaleFactor()
+			const width = newGame.renderer.getWidth()
+			const height = newGame.renderer.getHeight()
+			const x = event.pageX - gamePos.left - (newGame.renderer.mobile ? 0 : 5 * scale)
+			const y = event.pageY - gamePos.top - (newGame.renderer.mobile ? 0 : 7 * scale)
+			newGame.mouse.x = Math.max(0, Math.min(width-1, x))
+			newGame.mouse.y = Math.max(0, Math.min(height-1, y))
+			newGame.movecursor()
+		}
 		const onMouseMove = (event) => {
 			setMouseCoordinates(event)
 		}
 		const onTouchStart = (event) => {
 			setMouseCoordinates(event.originalEvent.touches[0])
-			game.click()
+			newGame.click()
 		}
 		const onClick = (event) => {
 			setMouseCoordinates(event)
-			game.click()
+			newGame.click()
 		}
 
 		const canvas = document.getElementById('foreground')
@@ -783,7 +915,9 @@ function GameScreen({game, name}: any) {
 
 				<div id="bubbles"></div>
 
+				{Boolean(game) && (
 				<ActionBar game={game}/>
+				)}
 			</div>
 		</div>
 	)
@@ -791,32 +925,46 @@ function GameScreen({game, name}: any) {
 
 
 
+function getSavedHeroAccess(): HeroAccessInfo|null {
+	try {
+		const {ident, secret} = JSON.parse(window.localStorage.hero)
+		if (typeof ident!=='string' || typeof secret!=='string') {
+			return null
+		}
+		return {ident, secret}
+	}
+	catch (err) {
+		return null
+	}
+}
+
+function deleteSavedHeroAccess() {
+	window.localStorage.removeItem('hero')
+}
+
+function saveHeroAccess(data: HeroAccessInfo) {
+	window.localStorage.hero = JSON.stringify(data)
+}
+
+
+
+
 
 function Everything() {
-	const [game, setGame] = useState<Game>(null)
-
-	const onStartNewGame = async ({name}) => {
-		const newGame = new Game(name)
-		setGame(newGame)
-	}
-
-	const heroInfo = storage.load()
-
-	const onLoadGame = async () => {
-		const newGame = new Game(heroInfo.player.name)
-		setGame(newGame)
-	}
+	const [hero, setHero] = useState<HeroInfo>(null)
 
 	return (
 		<div>
-			{game? (
-			<GameScreen game={game} name={name}/>
+			{hero===null? (
+				<IntroScreen2 onStart={(newHero) => {
+					setHero(newHero)
+					saveHeroAccess({
+						ident: newHero.ident,
+						secret: newHero.secret
+					})
+				}}/>
 			) : (
-			<IntroScreen
-				heroInfo={heroInfo}
-				onStartNewGame={onStartNewGame}
-				onLoadGame={onLoadGame}
-			/>
+				<GameScreen hero={hero}/>
 			)}
 		</div>
 	)

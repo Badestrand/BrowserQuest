@@ -30,25 +30,25 @@ export default class Character extends Entity {
     
     resetHitPoints(maxHitpoints) {
         this.maxHitpoints = maxHitpoints;
-        this.hitPoints = this.maxHitpoints;
+        this.hitpoints = this.maxHitpoints;
     }
     
     regenHealthBy(value) {
-        var hp = this.hitPoints,
+        var hp = this.hitpoints,
             max = this.maxHitpoints;
             
         if(hp < max) {
             if(hp + value <= max) {
-                this.hitPoints += value;
+                this.hitpoints += value;
             }
             else {
-                this.hitPoints = max;
+                this.hitpoints = max;
             }
         }
     }
     
     hasFullHealth() {
-        return this.hitPoints === this.maxHitpoints;
+        return this.hitpoints === this.maxHitpoints;
     }
     
     setTarget(entity) {
@@ -68,11 +68,11 @@ export default class Character extends Entity {
     }
     
     health() {
-        return new Messages.Health(this.hitPoints, false);
+        return new Messages.Health(this.hitpoints, false);
     }
-    
+
     regen() {
-        return new Messages.Health(this.hitPoints, true);
+        return new Messages.Health(this.hitpoints, true);
     }
     
     addAttacker(entity) {
@@ -98,6 +98,6 @@ export default class Character extends Entity {
     public orientation: any
     public attackers: any
     public target: any
-    public hitPoints: any
+    public hitpoints: any
     public maxHitpoints: any
 }

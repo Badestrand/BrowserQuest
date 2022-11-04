@@ -7,6 +7,7 @@ import Item from './item'
 import Character from './character'
 import Player from './player'
 import Timer from './timer'
+import Sprite from './sprite'
 import * as Detect from './detect'
 
 
@@ -299,7 +300,7 @@ export default class Renderer {
 				throw Error("A problem occured when trying to draw on the canvas");
 			}
 		});
-	
+
 		ctx.drawImage(image,
 					  x * s,
 					  y * s,
@@ -675,42 +676,92 @@ export default class Renderer {
 		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	}
 
-	getPlayerImage() {
-		const canvas = document.createElement('canvas')
-		const ctx = canvas.getContext('2d')
-		const os = this.upscaledRendering ? 1 : this.scale
-		const player = this.game.player
-		const sprite = player.getArmorSprite()
-		const spriteAnim = sprite.animationData["idle_down"]
-			// character
-		const row = spriteAnim.row
-		const w = sprite.width * os
-		const h = sprite.height * os
-		const y = row * h
-			// weapon
-		const weapon = this.game.sprites[this.game.player.getWeaponName()]
-		const ww = weapon.width * os
-		const wh = weapon.height * os
-		const wy = wh * row
-		const offsetX = (weapon.offsetX - sprite.offsetX) * os
-		const offsetY = (weapon.offsetY - sprite.offsetY) * os
-			// shadow
-		const shadow = this.game.shadows["small"]
-		const sw = shadow.width * os
-		const sh = shadow.height * os
-		const ox = -sprite.offsetX * os
-		const oy = -sprite.offsetY * os
+
+	// getPlayerImage() {
+	// 	const canvas = document.createElement('canvas')
+	// 	const ctx = canvas.getContext('2d')
+	// 	const os = this.upscaledRendering ? 1 : this.scale
+	// 	const player = this.game.player
+	// 	const sprite = player.getArmorSprite()
+	// 	const spriteAnim = sprite.animationData["idle_down"]
+	// 		// character
+	// 	const row = spriteAnim.row
+	// 	const w = sprite.width * os
+	// 	const h = sprite.height * os
+	// 	const y = row * h
+	// 		// weapon
+	// 	const weapon = this.game.sprites[this.game.player.getWeaponName()]
+	// 	const ww = weapon.width * os
+	// 	const wh = weapon.height * os
+	// 	const wy = wh * row
+	// 	const offsetX = (weapon.offsetX - sprite.offsetX) * os
+	// 	const offsetY = (weapon.offsetY - sprite.offsetY) * os
+	// 		// shadow
+	// 	const shadow = this.game.shadows["small"]
+	// 	const sw = shadow.width * os
+	// 	const sh = shadow.height * os
+	// 	const ox = -sprite.offsetX * os
+	// 	const oy = -sprite.offsetY * os
 	
-		canvas.width = w
-		canvas.height = h
+	// 	canvas.width = w
+	// 	canvas.height = h
 	
-		ctx.clearRect(0, 0, w, h)
-		ctx.drawImage(shadow.image, 0, 0, sw, sh, ox, oy, sw, sh)
-		ctx.drawImage(sprite.image, 0, y, w, h, 0, 0, w, h)
-		ctx.drawImage(weapon.image, 0, wy, ww, wh, offsetX, offsetY, ww, wh)
+	// 	ctx.clearRect(0, 0, w, h)
+	// 	ctx.drawImage(shadow.image, 0, 0, sw, sh, ox, oy, sw, sh)
+	// 	ctx.drawImage(sprite.image, 0, y, w, h, 0, 0, w, h)
+	// 	ctx.drawImage(weapon.image, 0, wy, ww, wh, offsetX, offsetY, ww, wh)
 	
-		return canvas.toDataURL("image/png")
+	// 	return canvas.toDataURL("image/png")
+	// }
+
+
+
+	static getPlayerImage2(armorId, weaponId) {
+		return new Promise((resolve, reject) => {
+			const canvas = document.createElement('canvas')
+			const ctx = canvas.getContext('2d')
+			const scale = 2
+
+			const armorSprite = new Sprite(Types.getDisplayName(armorId), scale)
+			const weaponSprite = new Sprite(Types.getDisplayName(weaponId), scale)
+			const shadowSprite = new Sprite('shadow16', scale)
+
+			Promise.all([armorSprite.promise, weaponSprite.promise, shadowSprite.promise]).then(() => {
+				const armorSpriteAnim = armorSprite.animationData["idle_down"]
+
+				// character
+				const row = armorSpriteAnim.row
+				const w = armorSprite.width * scale
+				const h = armorSprite.height * scale
+				const y = row * h
+
+				// weapon
+				const ww = weaponSprite.width * scale
+				const wh = weaponSprite.height * scale
+				const wy = wh * row
+				const offsetX = (weaponSprite.offsetX - armorSprite.offsetX) * scale
+				const offsetY = (weaponSprite.offsetY - armorSprite.offsetY) * scale
+
+				// shadow
+				const sw = shadowSprite.width * scale
+				const sh = shadowSprite.height * scale
+				const ox = -armorSprite.offsetX * scale
+				const oy = -armorSprite.offsetY * scale
+			
+				canvas.width = w
+				canvas.height = h
+			
+				ctx.clearRect(0, 0, w, h)
+				ctx.drawImage(shadowSprite.image, 0, 0, sw, sh, ox, oy, sw, sh)
+				ctx.drawImage(armorSprite.image, 0, y, w, h, 0, 0, w, h)
+				ctx.drawImage(weaponSprite.image, 0, wy, ww, wh, offsetX, offsetY, ww, wh)
+			
+				resolve(canvas.toDataURL("image/png"))
+			})
+		})
 	}
+
+
 
 	renderStaticCanvases() {
 		this.background.save();
@@ -727,6 +778,8 @@ export default class Renderer {
 		}
 	}
 
+
+
 	renderFrame() {
 		if(this.mobile || this.tablet) {
 			this.renderFrameMobile();
@@ -742,7 +795,7 @@ export default class Renderer {
 		this.context.save();
 			this.setCameraView(this.context);
 			this.drawAnimatedTiles();
-		
+
 			if(this.game.started) {
 				this.drawSelectedCell();
 				this.drawTargetCell();
@@ -754,7 +807,7 @@ export default class Renderer {
 			this.drawCombatInfo();
 			this.drawHighTiles(this.context);
 		this.context.restore();
-	
+
 		// Overlay UI elements
 		this.drawCursor();
 		this.drawDebugInfo();

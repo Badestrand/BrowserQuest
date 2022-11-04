@@ -9,7 +9,7 @@ import * as Types from '../../shared/gametypes'
 class FormatChecker {
     constructor() {
         this.formats = [];
-        this.formats[Types.Messages.HELLO] = ['s', 'n', 'n'],
+        this.formats[Types.Messages.HELLO] = ['s', 's'],
         this.formats[Types.Messages.MOVE] = ['n', 'n'],
         this.formats[Types.Messages.LOOTMOVE] = ['n', 'n', 'n'],
         this.formats[Types.Messages.AGGRO] = ['n'],
@@ -22,6 +22,7 @@ class FormatChecker {
         this.formats[Types.Messages.ZONE] = [],
         this.formats[Types.Messages.OPEN] = ['n'],
         this.formats[Types.Messages.CHECK] = ['n']
+        this.formats[Types.Messages.SPEND_ATTR] = ['s']
     }
     
     check(msg) {

@@ -121,8 +121,7 @@ export class HitPoints extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.HP,
-				this.maxHitpoints];
+		return [Types.Messages.HP, this.maxHitpoints];
 	}
 
 	public maxHitpoints: any

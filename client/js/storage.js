@@ -21,17 +21,18 @@ export default class Storage {
 	}
 
 	resetData() {
-		const classInfo = _.findWhere(AllCharacterClasses, {name: 'Barbarian'})
+		const charClass = _.findWhere(AllCharacterClasses, {id: 'barbarian'})
 		this.data = {
 			hasAlreadyPlayed: false,
 			player: {  // TODO: should come from empty player?
+				charClass,
 				name: '',
 				weapon: '',
 				armor: '',
 				image: '',
 				exp: 0,
 				level: 1,
-				attrs: clone(classInfo.attributes),
+				attrs: clone(charClass.attributes),
 			},
 			achievements: {
 				unlocked: [],

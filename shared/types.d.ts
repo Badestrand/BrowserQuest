@@ -27,6 +27,25 @@ type Item = {
 }
 
 
+type HeroInfo = {
+	ident: string   // TODO: erase from here
+	secret: string  // TODO: erase from here
+
+	name: string
+	armorId: number
+	weaponId: number
+	charClassId: string
+	spentAttrPoints: {
+		str: number
+		dex: number
+		vit: number
+		ene: number
+	}
+	experience: number
+}
+
+
+
 
 // type ActiveObject = {
 // 	tick(deltaTime: number): void
@@ -98,7 +117,9 @@ type AttrShort = 'str'|'dex'|'vit'|'ene'
 type SlotInfo = 'head' | 'left-hand' | 'right-hand' | 'torso'
 
 type CharacterClassInfo = {
+	id: string
 	name: string
+	isAvailable: boolean
 	attributes: AttrPointsInfo
 	life: number
 	mana: number

@@ -30,8 +30,6 @@
 }*/
 
 const Messages = {
-	HELLO: 'HELLO',
-	WELCOME: 'WELCOME',
 	SPAWN: 'SPAWN',
 	DESPAWN: 'DESPAWN',
 	MOVE: 'MOVE',
