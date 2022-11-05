@@ -72,8 +72,8 @@ export default class Entity extends EventEmitter {
 		this.animations = sprite.createAnimations();
 	
 		this.isLoaded = true;
-		if(this.ready_func) {
-			this.ready_func();
+		if(this.ready_callback) {
+			this.ready_callback();
 		}
 	}
 
@@ -115,7 +115,9 @@ export default class Entity extends EventEmitter {
 				}
 				this.currentAnimation.setSpeed(speed);
 				this.currentAnimation.setCount(count ? count : 0, onEndCount || function() {
-					self.idle();
+					if ((self as any).idle) {
+						(self as any).idle();
+					}
 				});
 			}
 		}
@@ -129,7 +131,7 @@ export default class Entity extends EventEmitter {
 	}
 
 	ready(f) {
-		this.ready_func = f;
+		this.ready_callback = f;
 	}
 
 	clean() {
@@ -261,4 +263,35 @@ export default class Entity extends EventEmitter {
 	onDirty(dirty_callback) {
 		this.dirty_callback = dirty_callback;
 	}
+
+
+
+
+	public id: number
+	public kind: number
+	public isLoaded: boolean
+	public isHighlighted: boolean
+	public visible: boolean
+	public name: string
+	public x: number
+	public y: number
+
+	public gridX: number
+	public gridY: number
+	protected sprite: any
+	private blinking: any
+	public isFading: boolean
+	private startFadingTime: number
+	protected normalSprite: any
+	protected hurtSprite: any
+	protected flipSpriteX: boolean
+	protected flipSpriteY: boolean
+	private animations: any
+	protected currentAnimation: any
+	private shadowOffsetY: number
+	private isDirty: boolean
+	private ready_callback: any
+	private dirty_callback: any
+	public dirtyRect: any
+
 }

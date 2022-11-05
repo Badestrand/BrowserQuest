@@ -1,6 +1,6 @@
 import * as $ from 'jquery'
 
-import log from './log'
+import log from '../log'
 import Animation from './animation'
 import sprites from './sprites'
 

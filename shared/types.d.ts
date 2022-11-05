@@ -57,6 +57,12 @@ type ArmorVariantInfo = {
 // }
 
 
+type HeroAccessInfo = {
+	ident: string
+	secret: string
+}
+
+
 type HeroInfo = {
 	ident: string   // TODO: erase from here
 	secret: string  // TODO: erase from here

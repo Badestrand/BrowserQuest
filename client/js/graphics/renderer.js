@@ -1,14 +1,14 @@
 import * as _ from 'underscore'
 
-import log from './log'
-import * as Types from '../../shared/gametypes'
+import log from '../log'
+import * as Types from '../../../shared/gametypes'
 import Camera from './camera'
-import Item from './item'
-import Character from './character'
-import Player from './player'
-import Timer from './timer'
+import Item from '../item'
+import Character from '../character'
+import Player from '../player'
+import Timer from '../timer'
 import Sprite from './sprite'
-import * as Detect from './detect'
+import * as Detect from '../detect'
 
 
 
