@@ -4,14 +4,16 @@ import crypto from 'crypto'
 
 import {socketIOConnection} from './ws'
 import * as log from './log'
-import * as Messages from './message'
+import * as Messages2 from './message'
 import * as Utils from './utils'
 import Character from './character'
 import Chest from './chest'
 import World from './worldserver'
 import check from './format'
 import * as Types from '../../shared/gametypes'
-import {AllCharacterClasses, getLevelFromExperience, ATTR_POINTS_PER_LEVEL} from '../../shared/game'
+import {getLevelFromExperience} from '../../shared/gametypes'
+import {AllCharacterClasses} from '../../shared/content'
+import {Entities, Messages, ATTR_POINTS_PER_LEVEL, INITIAL_ARMOR_KIND, INITIAL_WEAPON_KIND} from '../../shared/constants'
 
 
 
@@ -75,8 +77,8 @@ export default class Player extends Character {
 			ident: ident,
 			secret: secret,
 			name: cleanName,
-			armorKind: Types.INITIAL_ARMOR_KIND,
-			weaponKind: Types.INITIAL_WEAPON_KIND,
+			armorKind: INITIAL_ARMOR_KIND,
+			weaponKind: INITIAL_WEAPON_KIND,
 			charClassId,
 			spentAttrPoints: {
 				str: 0,
@@ -93,7 +95,7 @@ export default class Player extends Character {
 
 
 	constructor(heroInfo: HeroInfo, connection: socketIOConnection, worldServer: World) {
-		super(connection.id /*TODO: Should the player ID really be the connection id??*/, 'player', Types.Entities.WARRIOR, 0, 0)
+		super(connection.id /*TODO: Should the player ID really be the connection id??*/, 'player', Entities.WARRIOR, 0, 0)
 
 		this.world = worldServer
 		this.connection = connection
@@ -114,7 +116,7 @@ export default class Player extends Character {
 		this.weapon = new Weapon(Types.getWeaponVariantByKind(heroInfo.weaponKind))
 
 		// more initialization
-		this.kind = Types.Entities.WARRIOR
+		this.kind = Entities.WARRIOR
 		this.orientation = Utils.randomOrientation()
 		this.updateMaxLifeAndMana()
 		this.hitpoints = this.maxHitpoints
@@ -135,23 +137,23 @@ export default class Player extends Character {
 
 			this.resetTimeout();
 
-			if(action === Types.Messages.WHO) {
+			if(action === Messages.WHO) {
 				message.shift();
 				this.world.pushSpawnsToPlayer(this, message);
 			}
-			else if (action === Types.Messages.ZONE) {
+			else if (action === Messages.ZONE) {
 				this.zone_callback();
 			}
-			else if (action === Types.Messages.CHAT) {
+			else if (action === Messages.CHAT) {
 				var msg = Utils.sanitize(message[1]);
 				
 				// Sanitized messages may become empty. No need to broadcast empty chat messages.
 				if(msg && msg !== "") {
 					msg = msg.substr(0, 60); // Enforce maxlength of chat input
-					this.broadcastToZone(new Messages.Chat(this, msg), false);
+					this.broadcastToZone(new Messages2.Chat(this, msg), false);
 				}
 			}
-			else if (action === Types.Messages.MOVE) {
+			else if (action === Messages.MOVE) {
 				if(this.move_callback) {
 					var x = message[1],
 						y = message[2];
@@ -160,12 +162,12 @@ export default class Player extends Character {
 						this.setPosition(x, y);
 						this.clearTarget();
 						
-						this.broadcast(new Messages.Move(this));
+						this.broadcast(new Messages2.Move(this));
 						this.move_callback(this.x, this.y);
 					}
 				}
 			}
-			else if (action === Types.Messages.LOOTMOVE) {
+			else if (action === Messages.LOOTMOVE) {
 				if(this.lootmove_callback) {
 					this.setPosition(message[1], message[2]);
 					
@@ -173,17 +175,17 @@ export default class Player extends Character {
 					if(item) {
 						this.clearTarget();
 
-						this.broadcast(new Messages.LootMove(this, item));
+						this.broadcast(new Messages2.LootMove(this, item));
 						this.lootmove_callback(this.x, this.y);
 					}
 				}
 			}
-			else if (action === Types.Messages.AGGRO) {
+			else if (action === Messages.AGGRO) {
 				if(this.move_callback) {
 					this.world.handleMobHate(message[1], this.id, 5);
 				}
 			}
-			else if (action === Types.Messages.ATTACK) {
+			else if (action === Messages.ATTACK) {
 				var mob = this.world.getEntityById(message[1]);
 				
 				if(mob) {
@@ -191,7 +193,7 @@ export default class Player extends Character {
 					this.world.broadcastAttacker(this);
 				}
 			}
-			else if (action === Types.Messages.HIT) {
+			else if (action === Messages.HIT) {
 				var mob = this.world.getEntityById(message[1]);
 
 				if(mob) {
@@ -203,7 +205,7 @@ export default class Player extends Character {
 					}
 				}
 			}
-			else if (action === Types.Messages.HURT) {
+			else if (action === Messages.HURT) {
 				var mob = this.world.getEntityById(message[1]);
 				if(mob && this.hitpoints > 0) {
 					const dmg = Types.dmg(mob.variant.weapon, null, this.armor.variant.armorLevel);
@@ -217,7 +219,7 @@ export default class Player extends Character {
 					}
 				}
 			}
-			else if (action === Types.Messages.LOOT) {
+			else if (action === Messages.LOOT) {
 				var item = this.world.getEntityById(message[1]);
 				
 				if(item) {
@@ -227,23 +229,23 @@ export default class Player extends Character {
 						this.broadcast(item.despawn());
 						this.world.removeEntity(item);
 						
-						if(kind === Types.Entities.FIREPOTION) {
+						if(kind === Entities.FIREPOTION) {
 							this.hitpoints = this.maxHitpoints
-							this.broadcast(this.equip(Types.Entities.FIREFOX))
+							this.broadcast(this.equip(Entities.FIREFOX))
 							this.firepotionTimeout = setTimeout(() => {
 								this.broadcast(this.equip(this.armor.variant.kind)) // return to normal after 15 sec
 								this.firepotionTimeout = null
 							}, 15000)
-							this.send(new Messages.MaxHitpoints(this.maxHitpoints))
+							this.send(new Messages2.MaxHitpoints(this.maxHitpoints))
 						}
 						else if(Types.isHealingItem(kind)) {
 							var amount;
 							
 							switch(kind) {
-								case Types.Entities.FLASK: 
+								case Entities.FLASK: 
 									amount = 40;
 									break;
-								case Types.Entities.BURGER: 
+								case Entities.BURGER: 
 									amount = 100;
 									break;
 							}
@@ -260,7 +262,7 @@ export default class Player extends Character {
 					}
 				}
 			}
-			else if (action === Types.Messages.TELEPORT) {
+			else if (action === Messages.TELEPORT) {
 				var x = message[1],
 					y = message[2];
 				
@@ -268,25 +270,25 @@ export default class Player extends Character {
 					this.setPosition(x, y);
 					this.clearTarget();
 					
-					this.broadcast(new Messages.Teleport(this));
+					this.broadcast(new Messages2.Teleport(this));
 					
 					this.world.handlePlayerVanish(this);
 					this.world.pushRelevantEntityListTo(this);
 				}
 			}
-			else if (action === Types.Messages.OPEN) {
+			else if (action === Messages.OPEN) {
 				var chest = this.world.getEntityById(message[1]);
 				if(chest && chest instanceof Chest) {
 					this.world.handleOpenedChest(chest, this);
 				}
 			}
-			else if (action === Types.Messages.CHECK) {
+			else if (action === Messages.CHECK) {
 				var checkpoint = this.world.map.getCheckpoint(message[1]);
 				if(checkpoint) {
 					this.lastCheckpoint = checkpoint;
 				}
 			}
-			else if (action === Types.Messages.SPEND_ATTR) {
+			else if (action === Messages.SPEND_ATTR) {
 				const attr = message[1]
 				if (!(attr==='str' || attr==='dex' || attr==='vit' || attr==='ene')) {
 					throw new Error('Invalid attribute '+attr)
@@ -315,16 +317,16 @@ export default class Player extends Character {
 
 				// send updates
 				if (this.maxHitpoints !== before.maxHitpoints) {
-					this.send(new Messages.MaxHitpoints(this.maxHitpoints))
+					this.send(new Messages2.MaxHitpoints(this.maxHitpoints))
 				}
 				if (this.maxMana !== before.maxMana) {
-					this.send(new Messages.MaxMana(this.maxMana))
+					this.send(new Messages2.MaxMana(this.maxMana))
 				}
 				if (this.hitpoints !== before.hitpoints) {
-					this.send(new Messages.CurHitpoints(this.hitpoints, false))
+					this.send(new Messages2.CurHitpoints(this.hitpoints, false))
 				}
 				if (this.mana !== before.mana) {
-					this.send(new Messages.CurMana(this.mana, false))
+					this.send(new Messages2.CurMana(this.mana, false))
 				}
 
 				// update storage
@@ -429,7 +431,7 @@ export default class Player extends Character {
 
 
 	equip(item) {
-		return new Messages.EquipItem(this, item);
+		return new Messages2.EquipItem(this, item);
 	}
 
 

@@ -1,7 +1,9 @@
 import * as _ from 'underscore'
 
-import log from '../log'
 import * as Types from '../../../shared/gametypes'
+import {Entities} from '../../../shared/constants'
+
+import log from '../log'
 import Camera from './camera'
 import Item from '../item'
 import Character from '../character'
@@ -390,7 +392,7 @@ export default class Renderer {
 			
 				this.context.drawImage(sprite.image, x, y, w, h, ox, oy, dw, dh);
 
-				if(entity instanceof Item && entity.kind !== Types.Entities.CAKE) {
+				if(entity instanceof Item && entity.kind !== Entities.CAKE) {
 					var sparks = this.game.sprites["sparks"],
 						anim = this.game.sparksAnimation,
 						frame = anim.currentFrame,

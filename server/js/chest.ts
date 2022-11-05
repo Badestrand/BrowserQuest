@@ -2,14 +2,14 @@ import * as _ from 'underscore'
 
 import * as Utils from './utils'
 import Item from './item'
-import * as Types from '../../shared/gametypes'
+import {Entities} from '../../shared/constants'
 
 
 
 
 export default class Chest extends Item {
     constructor(id, x, y) {
-        super(id, Types.Entities.CHEST, x, y);
+        super(id, Entities.CHEST, x, y);
     }
     
     setItems(items) {

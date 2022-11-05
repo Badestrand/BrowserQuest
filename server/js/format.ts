@@ -1,7 +1,7 @@
 import * as _ from 'underscore'
 
 import * as log from './log'
-import * as Types from '../../shared/gametypes'
+import {Messages} from '../../shared/constants'
 
 
 
@@ -9,19 +9,19 @@ import * as Types from '../../shared/gametypes'
 class FormatChecker {
     constructor() {
         this.formats = [];
-        this.formats[Types.Messages.MOVE] = ['n', 'n'],
-        this.formats[Types.Messages.LOOTMOVE] = ['n', 'n', 'n'],
-        this.formats[Types.Messages.AGGRO] = ['n'],
-        this.formats[Types.Messages.ATTACK] = ['n'],
-        this.formats[Types.Messages.HIT] = ['n'],
-        this.formats[Types.Messages.HURT] = ['n'],
-        this.formats[Types.Messages.CHAT] = ['s'],
-        this.formats[Types.Messages.LOOT] = ['n'],
-        this.formats[Types.Messages.TELEPORT] = ['n', 'n'],
-        this.formats[Types.Messages.ZONE] = [],
-        this.formats[Types.Messages.OPEN] = ['n'],
-        this.formats[Types.Messages.CHECK] = ['n']
-        this.formats[Types.Messages.SPEND_ATTR] = ['s']
+        this.formats[Messages.MOVE] = ['n', 'n'],
+        this.formats[Messages.LOOTMOVE] = ['n', 'n', 'n'],
+        this.formats[Messages.AGGRO] = ['n'],
+        this.formats[Messages.ATTACK] = ['n'],
+        this.formats[Messages.HIT] = ['n'],
+        this.formats[Messages.HURT] = ['n'],
+        this.formats[Messages.CHAT] = ['s'],
+        this.formats[Messages.LOOT] = ['n'],
+        this.formats[Messages.TELEPORT] = ['n', 'n'],
+        this.formats[Messages.ZONE] = [],
+        this.formats[Messages.OPEN] = ['n'],
+        this.formats[Messages.CHECK] = ['n']
+        this.formats[Messages.SPEND_ATTR] = ['s']
     }
     
     check(msg) {
@@ -45,7 +45,7 @@ class FormatChecker {
             }
             return true;
         }
-        else if(type === Types.Messages.WHO) {
+        else if(type === Messages.WHO) {
             // WHO messages have a variable amount of params, all of which must be numbers.
             return message.length > 0 && _.all(message, function(param) { return _.isNumber(param) });
         }

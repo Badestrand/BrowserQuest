@@ -2,7 +2,6 @@ import * as _ from 'underscore'
 
 import Player from './player'
 import {clone} from './util'
-import {AllCharacterClasses} from '../../shared/game'
 
 
 

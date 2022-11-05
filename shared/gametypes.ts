@@ -1,102 +1,9 @@
-const Messages = {
-	SPAWN: 'SPAWN',
-	DESPAWN: 'DESPAWN',
-	MOVE: 'MOVE',
-	LOOTMOVE: 'LOOTMOVE',
-	AGGRO: 'AGGRO',
-	ATTACK: 'ATTACK',
-	HIT: 'HIT',
-	HURT: 'HURT',
-	HEALTH: 'HEALTH',
-	MAX_HITPOINTS: 'MAX_HITPOINTS',
-	CHAT: 'CHAT',
-	LOOT: 'LOOT',
-	EQUIP: 'EQUIP',
-	DROP: 'DROP',
-	TELEPORT: 'TELEPORT',
-	DAMAGE: 'DAMAGE',
-	POPULATION: 'POPULATION',
-	KILL: 'KILL',
-	LIST: 'LIST',
-	WHO: 'WHO',
-	ZONE: 'ZONE',
-	DESTROY: 'DESTROY',
-	MANA: 'MANA',
-	MAX_MANA: 'MAX_MANA',
-	BLINK: 'BLINK',
-	OPEN: 'OPEN',
-	CHECK: 'CHECK',
-	SPEND_ATTR: 'SPEND_ATTR',
-}
-	
-const Entities = {
-	WARRIOR: 1,
-	
-	// Mobs
-	RAT: 2,
-	SKELETON: 3,
-	GOBLIN: 4,
-	OGRE: 5,
-	SPECTRE: 6,
-	CRAB: 7,
-	BAT: 8,
-	WIZARD: 9,
-	EYE: 10,
-	SNAKE: 11,
-	SKELETON2: 12,
-	BOSS: 13,
-	DEATHKNIGHT: 14,
-	
-	// Armors
-	FIREFOX: 20,
-	CLOTHARMOR: 21,
-	LEATHERARMOR: 22,
-	MAILARMOR: 23,
-	PLATEARMOR: 24,
-	REDARMOR: 25,
-	GOLDENARMOR: 26,
-	
-	// Objects
-	FLASK: 35,
-	BURGER: 36,
-	CHEST: 37,
-	FIREPOTION: 38,
-	CAKE: 39,
-	
-	// NPCs
-	GUARD: 40,
-	KING: 41,
-	OCTOCAT: 42,
-	VILLAGEGIRL: 43,
-	VILLAGER: 44,
-	PRIEST: 45,
-	SCIENTIST: 46,
-	AGENT: 47,
-	RICK: 48,
-	NYAN: 49,
-	SORCERER: 50,
-	BEACHNPC: 51,
-	FORESTNPC: 52,
-	DESERTNPC: 53,
-	LAVANPC: 54,
-	CODER: 55,
-	
-	// Weapons
-	SWORD1: 60,
-	SWORD2: 61,
-	REDSWORD: 62,
-	GOLDENSWORD: 63,
-	MORNINGSTAR: 64,
-	AXE: 65,
-	BLUESWORD: 66
-}
+import AllWeaponVariants from './content/weapons'
+import AllArmorVariants from './content/armor'
+import AllMobVariants from './content/mobs'
+import {Entities, Orientations, Messages, LEVEL_REQUIREMENTS} from './constants'
 
-const Orientations = {
-	UP: 1,
-	DOWN: 2,
-	LEFT: 3,
-	RIGHT: 4
-}
+
 
 
 var kinds = {
@@ -161,42 +68,7 @@ var kinds = {
 }
 
 
-const AllWeaponVariants: Array<WeaponVariantInfo> = [{
-	kind: Entities.SWORD1,
-	key: 'sword1',
-	name: 'Wooden sword',
-	weaponLevel: 1
-}, {
-	kind: Entities.SWORD2,
-	key: 'sword2',
-	name: 'Iron sword',
-	weaponLevel: 2
-}, {
-	kind: Entities.AXE,
-	key: 'axe',
-	name: 'Axe',
-	weaponLevel: 3
-}, {
-	kind: Entities.MORNINGSTAR,
-	key: 'morningstar',
-	name: 'Morning Star',
-	weaponLevel: 4
-}, {
-	kind: Entities.BLUESWORD,
-	key: 'bluesword',
-	name: 'Crystal Sword',
-	weaponLevel: 5
-}, {
-	kind: Entities.REDSWORD,
-	key: 'redsword',
-	name: 'Flame Sword',
-	weaponLevel: 6
-}, {
-	kind: Entities.GOLDENSWORD,
-	key: 'goldensword',
-	name: 'Golden Sword',
-	weaponLevel: 7
-}]
+
 
 
 export function getWeaponVariantByKind(kind: number): WeaponVariantInfo {
@@ -209,40 +81,6 @@ export function getWeaponVariantByKind(kind: number): WeaponVariantInfo {
 }
 
 
-
-
-
-const AllArmorVariants: Array<ArmorVariantInfo> = [{
-	kind: Entities.CLOTHARMOR,
-	key: 'clotharmor',
-	name: 'Cloth Armor',
-	armorLevel: 1,
-}, {
-	kind: Entities.LEATHERARMOR,
-	key: 'leatherarmor',
-	name: 'Leather Armor',
-	armorLevel: 2,
-}, {
-	kind: Entities.MAILARMOR,
-	key: 'mailarmor',
-	name: 'Mail Armor',
-	armorLevel: 3,
-}, {
-	kind: Entities.PLATEARMOR,
-	key: 'platearmor',
-	name: 'Plate Armor',
-	armorLevel: 4,
-}, {
-	kind: Entities.REDARMOR,
-	key: 'redarmor',
-	name: 'Red Armor',
-	armorLevel: 5,
-}, {
-	kind: Entities.GOLDENARMOR,
-	key: 'goldenarmor',
-	name: 'Golden Armor',
-	armorLevel: 6,
-}]
 
 
 export function getArmorVariantByKind(kind: number): ArmorVariantInfo {
@@ -419,332 +257,6 @@ export function getMessageTypeAsString(type) {
 
 
 
-
-
-
-
-
-const AllMobVariants: Array<MobVariantInfo> = [{
-	kind: Entities.RAT,
-	key: 'rat',
-	drops: {
-		flask: 40,
-		burger: 10,
-		firepotion: 5
-	},
-	hp: 25,
-	armor: 1,
-	weapon: 1,
-	exp: 25,
-	moveSpeed: 350,
-	attackCooldown: 800,
-	graphics: {
-		attackAnimationSpeed: 50,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 700,
-		shadowOffsetY: -2,
-	},
-	behaviour: {
-		isAggressive: false,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.CRAB,
-	key: 'crab',
-	drops: {
-		flask: 50,
-		axe: 20,
-		leatherarmor: 10,
-		firepotion: 5
-	},
-	hp: 60,
-	armor: 2,
-	weapon: 1,
-	exp: 60,
-	moveSpeed: 200,
-	attackCooldown: 800,
-	graphics: {
-		attackAnimationSpeed: 40,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 500,
-		shadowOffsetY: 0,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.BAT,
-	key: 'bat',
-	drops: {
-		flask: 50,
-		axe: 10,
-		firepotion: 5
-	},
-	hp: 80,
-	armor: 2,
-	weapon: 1,
-	exp: 80,
-	moveSpeed: 120,
-	attackCooldown: 800,
-	graphics: {
-		attackAnimationSpeed: 90,
-		walkAnimationSpeed: 85,
-		idleAnimationSpeed: 90,
-		shadowOffsetY: 0,
-	},
-	behaviour: {
-		isAggressive: false,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.GOBLIN,
-	key: 'goblin',
-	drops: {
-		flask: 50,
-		leatherarmor: 20,
-		axe: 10,
-		firepotion: 5
-	},
-	hp: 90,
-	armor: 2,
-	weapon: 1,
-	exp: 90,
-	moveSpeed: 150,
-	attackCooldown: 700,
-	graphics: {
-		attackAnimationSpeed: 60,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 600,
-		shadowOffsetY: 0,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.WIZARD,
-	key: 'wizard',
-	drops: {
-		flask: 50,
-		platearmor: 20,
-		firepotion: 5
-	},
-	hp: 100,
-	armor: 2,
-	weapon: 6,
-	exp: 100,
-	moveSpeed: 200,
-	attackCooldown: 800,
-	graphics: {
-		attackAnimationSpeed: 100,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 150,
-		shadowOffsetY: 0,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.SKELETON,
-	key: 'skeleton',
-	drops: {
-		flask: 40,
-		mailarmor: 10,
-		axe: 20,
-		firepotion: 5
-	},
-	hp: 110,
-	armor: 2,
-	weapon: 2,
-	exp: 110,
-	moveSpeed: 350,
-	attackCooldown: 1300,
-	graphics: {
-		attackAnimationSpeed: 100,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 800,
-		shadowOffsetY: 1,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.SNAKE,
-	key: 'snake',
-	drops: {
-		flask: 50,
-		mailarmor: 10,
-		morningstar: 10,
-		firepotion: 5
-	},
-	hp: 150,
-	armor: 3,
-	weapon: 2,
-	exp: 150,
-	moveSpeed: 200,
-	attackCooldown: 800,
-	graphics: {
-		attackAnimationSpeed: 40,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 250,
-		shadowOffsetY: -4,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.OGRE,
-	key: 'ogre',
-	drops: {
-		burger: 10,
-		flask: 50,
-		platearmor: 20,
-		morningstar: 20,
-		firepotion: 5
-	},
-	hp: 200,
-	armor: 3,
-	weapon: 2,
-	exp: 200,
-	moveSpeed: 300,
-	attackCooldown: 800,
-	graphics: {
-		attackAnimationSpeed: 100,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 600,
-		shadowOffsetY: 0,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.SKELETON2,
-	key: 'skeleton2',
-	drops: {
-		flask: 60,
-		platearmor: 15,
-		bluesword: 15,
-		firepotion: 5
-	},
-	hp: 200,
-	armor: 3,
-	weapon: 3,
-	exp: 200,
-	moveSpeed: 200,
-	attackCooldown: 1300,
-	graphics: {
-		attackAnimationSpeed: 100,
-		walkAnimationSpeed: 200,
-		idleAnimationSpeed: 800,
-		shadowOffsetY: 1,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.EYE,
-	key: 'eye',
-	drops: {
-		flask: 50,
-		redarmor: 20,
-		redsword: 10,
-		firepotion: 5
-	},
-	hp: 200,
-	armor: 3,
-	weapon: 3,
-	exp: 200,
-	moveSpeed: 200,
-	attackCooldown: 800,
-	graphics: {
-		attackAnimationSpeed: 40,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 50,
-		shadowOffsetY: 0,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.SPECTRE,
-	key: 'spectre',
-	drops: {
-		flask: 30,
-		redarmor: 40,
-		redsword: 30,
-		firepotion: 5
-	},
-	hp: 250,
-	armor: 2,
-	weapon: 4,
-	exp: 250,
-	moveSpeed: 150,
-	attackCooldown: 900,
-	graphics: {
-		attackAnimationSpeed: 50,
-		walkAnimationSpeed: 200,
-		idleAnimationSpeed: 200,
-		shadowOffsetY: 1,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 1,
-	},
-}, {
-	kind: Entities.DEATHKNIGHT,
-	key: 'deathknight',
-	drops: {
-		burger: 95,
-		firepotion: 5
-	},
-	hp: 250,
-	armor: 3,
-	weapon: 3,
-	exp: 250,
-	moveSpeed: 220,
-	attackCooldown: 800,
-	graphics: {
-		attackAnimationSpeed: 50,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 450,
-		shadowOffsetY: 0,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 3,
-	},
-}, {
-	kind: Entities.BOSS,
-	key: 'boss',
-	drops: {
-		goldensword: 100
-	},
-	hp: 700,
-	armor: 6,
-	weapon: 7,
-	exp: 700,
-	moveSpeed: 300,
-	attackCooldown: 2000,
-	graphics: {
-		attackAnimationSpeed: 50,
-		walkAnimationSpeed: 100,
-		idleAnimationSpeed: 400,
-		shadowOffsetY: 0,
-	},
-	behaviour: {
-		isAggressive: true,
-		aggroRange: 3,
-	},
-}]
-
-
 export function getMobVariantByKind(kind: number): MobVariantInfo {
 	for (const variant of AllMobVariants) {
 		if (variant.kind === kind) {
@@ -791,20 +303,51 @@ export function dmg(weaponLevel: number, strength: number, armorLevel: number): 
 
 
 
-const INITIAL_ARMOR_KIND = Entities.CLOTHARMOR
-const INITIAL_WEAPON_KIND = Entities.SWORD1
 
+export function getLevelFromExperience(exp: number): number {
+	let level = 1
+	while (level<LEVEL_REQUIREMENTS.length-1 && exp>=LEVEL_REQUIREMENTS[level]) {
+		level += 1
+	}
+	return level
+}
+// for (const n of [0, 100, 500, 1000, 1500, 10000]) {
+// 	console.log(n, getLevelFromExperience(n))
+// }
+
+
+export function getAttackRating(charClass: CharacterClassInfo, totalDex: number): number {
+	// from https://d2.lc/AB/wiki/index49ee.html?title=Attack_Rating
+	return (totalDex - 7) * 5 + charClass.atr
+}
+
+
+export function getDefenseRating(totalDex: number): number {
+	// from https://d2.lc/AB/wiki/index8959.html?title=Defense
+	return totalDex / 4
+}
+
+
+export function getChanceToHit(attackerLevel: number, attackerAttackRating: number, defenderLevel: number, defenderDefenseRating: number): number {  // returns [0..1]
+	// from https://d2.lc/AB/wiki/indexd836.html?title=Attack#Chance_to_hit
+	// % Chance to hit = 100 * 2 * (alvl / (alvl+dlvl) ) * (AR / (AR+DR) )
+	// alvl=attacker level; dlvl=defender level; AR=attacker Attack Rating; DR=defender Defense rating.
+	// Chance to hit has a 5% floor and 95% ceiling, so there is always at least 5% chance to hit, or miss. 
+	// However, when a player character is running attacks always hit.
+	const base = 2 * (attackerLevel / (attackerLevel + defenderLevel)) * (attackerAttackRating / (attackerAttackRating + defenderDefenseRating))
+	return Math.max(0.05, Math.min(0.95, base))
+}
+
+
+export function getBlockChance(): number {
+	// https://diablo2.diablowiki.net/Blocking
+	// TODO
+	throw new Error('Not implemented')
+}
 
 
 
 
 export {
-	INITIAL_ARMOR_KIND,
-	INITIAL_WEAPON_KIND,
-	Messages,
-	Entities,
-	Orientations,
 	kinds,
-	AllMobVariants,
-	AllWeaponVariants,
 }

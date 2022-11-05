@@ -3,6 +3,7 @@ import * as _ from 'underscore'
 import Area from './area'
 import Mob from './mob'
 import * as Types from '../../shared/gametypes'
+import {Entities} from '../../shared/constants'
 import * as Utils from './utils'
 
 
@@ -76,7 +77,7 @@ export default class MobArea extends Area {
     createReward() {
         var pos = this._getRandomPositionInsideArea();
         
-        return { x: pos.x, y: pos.y, kind: Types.Entities.CHEST };
+        return { x: pos.x, y: pos.y, kind: Entities.CHEST };
     }
 
 

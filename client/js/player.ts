@@ -6,14 +6,16 @@ import * as Exceptions from  './exceptions'
 import {clone} from './util'
 import * as Types from '../../shared/gametypes'
 import connection from './connection'
-import {AllCharacterClasses, LEVEL_REQUIREMENTS, ATTR_POINTS_PER_LEVEL, getLevelFromExperience, getAttackRating, getDefenseRating} from '../../shared/game'
+import {AllCharacterClasses} from '../../shared/content'
+import {getLevelFromExperience, getAttackRating, getDefenseRating} from '../../shared/gametypes'
+import {Entities, LEVEL_REQUIREMENTS, ATTR_POINTS_PER_LEVEL} from '../../shared/constants'
 
 
 
 
 export default class Player extends Character {
 	constructor(id: any, hero: HeroInfo) {
-		super(id, Types.Entities.WARRIOR)
+		super(id, Entities.WARRIOR)
 	
 		this.nameOffsetY = -10
 		this.isLootMoving = false

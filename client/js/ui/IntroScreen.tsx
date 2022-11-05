@@ -2,7 +2,9 @@ import * as _ from 'underscore'
 import * as React from 'react'
 import {useState, useEffect, useRef} from 'react'
 
-import {AllCharacterClasses, getLevelFromExperience} from '../../../shared/game'
+import {AllCharacterClasses} from '../../../shared/content'
+import {getLevelFromExperience} from '../../../shared/gametypes'
+
 import connection from '../connection'
 import Game from '../game'
 import Renderer from '../graphics/renderer'

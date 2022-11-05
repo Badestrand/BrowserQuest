@@ -3,6 +3,7 @@ import EventEmitter from 'eventemitter3'
 import log from './log'
 
 import * as Types from '../../shared/gametypes'
+import {Orientations} from '../../shared/constants'
 
 
 
@@ -227,10 +228,10 @@ export default class Entity extends EventEmitter {
 	}
 	
 	forEachAdjacentNonDiagonalPosition(callback) {
-		callback(this.gridX - 1, this.gridY, Types.Orientations.LEFT);
-		callback(this.gridX, this.gridY - 1, Types.Orientations.UP);
-		callback(this.gridX + 1, this.gridY, Types.Orientations.RIGHT);
-		callback(this.gridX, this.gridY + 1, Types.Orientations.DOWN);
+		callback(this.gridX - 1, this.gridY, Orientations.LEFT);
+		callback(this.gridX, this.gridY - 1, Orientations.UP);
+		callback(this.gridX + 1, this.gridY, Orientations.RIGHT);
+		callback(this.gridX, this.gridY + 1, Orientations.DOWN);
 	}
 
 	fadeIn(currentTime) {

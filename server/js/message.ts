@@ -2,7 +2,7 @@ import * as _ from 'underscore'
 
 import * as log from './log'
 import * as Utils from './utils'
-import * as Types from '../../shared/gametypes'
+import {Messages} from '../../shared/constants'
 
 
 
@@ -18,7 +18,7 @@ export class Spawn extends Message {
 	}
 
 	serialize() {
-		var spawn = [Types.Messages.SPAWN];
+		var spawn = [Messages.SPAWN];
 		return spawn.concat(this.entity.getState());
 	}
 
@@ -33,7 +33,7 @@ export class Despawn extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.DESPAWN, this.entityId];
+		return [Messages.DESPAWN, this.entityId];
 	}
 
 	public entityId: any
@@ -47,7 +47,7 @@ export class Move extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.MOVE,
+		return [Messages.MOVE,
 				this.entity.id,
 				this.entity.x,
 				this.entity.y];
@@ -65,7 +65,7 @@ export class LootMove extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.LOOTMOVE,
+		return [Messages.LOOTMOVE,
 				this.entity.id,
 				this.item.id];
 	}
@@ -83,7 +83,7 @@ export class Attack extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.ATTACK,
+		return [Messages.ATTACK,
 				this.attackerId,
 				this.targetId];
 	}
@@ -101,7 +101,7 @@ export class CurHitpoints extends Message {
 	}
 
 	serialize() {
-		var health = [Types.Messages.HEALTH,
+		var health = [Messages.HEALTH,
 					  this.points];
 		if(this.isRegen) {
 			health.push(1);
@@ -121,7 +121,7 @@ export class MaxHitpoints extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.MAX_HITPOINTS, this.maxHitpoints];
+		return [Messages.MAX_HITPOINTS, this.maxHitpoints];
 	}
 
 	public maxHitpoints: any
@@ -136,7 +136,7 @@ export class CurMana extends Message {
 	}
 
 	serialize() {
-		var health = [Types.Messages.MANA,
+		var health = [Messages.MANA,
 					  this.points];
 		if(this.isRegen) {
 			health.push(1);
@@ -156,7 +156,7 @@ export class MaxMana extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.MAX_MANA, this.points];
+		return [Messages.MAX_MANA, this.points];
 	}
 
 	public points: any
@@ -171,7 +171,7 @@ export class EquipItem extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.EQUIP,
+		return [Messages.EQUIP,
 				this.playerId,
 				this.itemKind];
 	}
@@ -189,7 +189,7 @@ export class Drop extends Message {
 	}
 
 	serialize() {
-		var drop = [Types.Messages.DROP,
+		var drop = [Messages.DROP,
 					this.mob.id,
 					this.item.id,
 					this.item.kind,
@@ -211,7 +211,7 @@ export class Chat extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.CHAT,
+		return [Messages.CHAT,
 				this.playerId,
 				this.message];
 	}
@@ -228,7 +228,7 @@ export class Teleport extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.TELEPORT,
+		return [Messages.TELEPORT,
 				this.entity.id,
 				this.entity.x,
 				this.entity.y];
@@ -246,7 +246,7 @@ export class Damage extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.DAMAGE,
+		return [Messages.DAMAGE,
 				this.entity.id,
 				this.points];
 	}
@@ -264,7 +264,7 @@ export class Population extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.POPULATION,
+		return [Messages.POPULATION,
 				this.world,
 				this.total];
 	}
@@ -282,7 +282,7 @@ export class Kill extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.KILL, this.mob.kind, this.exp];
+		return [Messages.KILL, this.mob.kind, this.exp];
 	}
 
 	public mob: any
@@ -299,7 +299,7 @@ export class List extends Message {
 	serialize() {
 		var list = this.ids;
 		
-		list.unshift(Types.Messages.LIST);
+		list.unshift(Messages.LIST);
 		return list;
 	}
 
@@ -314,7 +314,7 @@ export class Destroy extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.DESTROY,
+		return [Messages.DESTROY,
 				this.entity.id];
 	}
 
@@ -329,7 +329,7 @@ export class Blink extends Message {
 	}
 
 	serialize() {
-		return [Types.Messages.BLINK,
+		return [Messages.BLINK,
 				this.item.id];
 	}
 

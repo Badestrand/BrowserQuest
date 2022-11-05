@@ -8,6 +8,7 @@ import config from './config'
 import log from './log'
 import Player from './player'
 import EntityFactory from './entityfactory'
+import {Messages} from '../../shared/constants'
 import * as Types from '../../shared/gametypes'
 
 
@@ -64,25 +65,25 @@ class Connection extends EventEmitter {
 
 
 		this.handlers = [];
-		this.handlers[Types.Messages.MOVE] = this.receiveMove;
-		this.handlers[Types.Messages.LOOTMOVE] = this.receiveLootMove;
-		this.handlers[Types.Messages.ATTACK] = this.receiveAttack;
-		this.handlers[Types.Messages.SPAWN] = this.receiveSpawn;
-		this.handlers[Types.Messages.DESPAWN] = this.receiveDespawn;
-		this.handlers[Types.Messages.HEALTH] = this.receiveHealth;
-		this.handlers[Types.Messages.CHAT] = this.receiveChat;
-		this.handlers[Types.Messages.EQUIP] = this.receiveEquipItem;
-		this.handlers[Types.Messages.DROP] = this.receiveDrop;
-		this.handlers[Types.Messages.TELEPORT] = this.receiveTeleport;
-		this.handlers[Types.Messages.DAMAGE] = this.receiveDamage;
-		this.handlers[Types.Messages.POPULATION] = this.receivePopulation;
-		this.handlers[Types.Messages.LIST] = this.receiveList;
-		this.handlers[Types.Messages.DESTROY] = this.receiveDestroy;
-		this.handlers[Types.Messages.KILL] = this.receiveKill;
-		this.handlers[Types.Messages.MAX_HITPOINTS] = this.receiveMaxHitpoints;
-		this.handlers[Types.Messages.MAX_MANA] = this.receiveMaxMana;
-		this.handlers[Types.Messages.MANA] = this.receiveMana;
-		this.handlers[Types.Messages.BLINK] = this.receiveBlink;
+		this.handlers[Messages.MOVE] = this.receiveMove;
+		this.handlers[Messages.LOOTMOVE] = this.receiveLootMove;
+		this.handlers[Messages.ATTACK] = this.receiveAttack;
+		this.handlers[Messages.SPAWN] = this.receiveSpawn;
+		this.handlers[Messages.DESPAWN] = this.receiveDespawn;
+		this.handlers[Messages.HEALTH] = this.receiveHealth;
+		this.handlers[Messages.CHAT] = this.receiveChat;
+		this.handlers[Messages.EQUIP] = this.receiveEquipItem;
+		this.handlers[Messages.DROP] = this.receiveDrop;
+		this.handlers[Messages.TELEPORT] = this.receiveTeleport;
+		this.handlers[Messages.DAMAGE] = this.receiveDamage;
+		this.handlers[Messages.POPULATION] = this.receivePopulation;
+		this.handlers[Messages.LIST] = this.receiveList;
+		this.handlers[Messages.DESTROY] = this.receiveDestroy;
+		this.handlers[Messages.KILL] = this.receiveKill;
+		this.handlers[Messages.MAX_HITPOINTS] = this.receiveMaxHitpoints;
+		this.handlers[Messages.MAX_MANA] = this.receiveMaxMana;
+		this.handlers[Messages.MANA] = this.receiveMana;
+		this.handlers[Messages.BLINK] = this.receiveBlink;
 	
 		this.enable();
 
@@ -429,14 +430,14 @@ class Connection extends EventEmitter {
 
 
 	receiveBlink(data) {
-		this.emit(Types.Messages.BLINK, data[1])
+		this.emit(Messages.BLINK, data[1])
 	}
 
 
 
 	// receiveExperience(data) {
 	// 	const exp = data[0]
-	// 	this.emit(Types.Messages.GAINEXP, exp)
+	// 	this.emit(Messages.GAINEXP, exp)
 	// }
 
 	onDispatched(callback) {
@@ -538,59 +539,59 @@ class Connection extends EventEmitter {
 
 
 	sendMove(x, y) {
-		this.sendMessage([Types.Messages.MOVE, x, y]);
+		this.sendMessage([Messages.MOVE, x, y]);
 	}
 
 	sendLootMove(item, x, y) {
-		this.sendMessage([Types.Messages.LOOTMOVE, x, y, item.id]);
+		this.sendMessage([Messages.LOOTMOVE, x, y, item.id]);
 	}
 
 	sendAggro(mob) {
-		this.sendMessage([Types.Messages.AGGRO, mob.id]);
+		this.sendMessage([Messages.AGGRO, mob.id]);
 	}
 
 	sendAttack(mob) {
-		this.sendMessage([Types.Messages.ATTACK, mob.id]);
+		this.sendMessage([Messages.ATTACK, mob.id]);
 	}
 
 	sendHit(mob) {
-		this.sendMessage([Types.Messages.HIT, mob.id]);
+		this.sendMessage([Messages.HIT, mob.id]);
 	}
 
 	sendHurt(mob) {
-		this.sendMessage([Types.Messages.HURT, mob.id]);
+		this.sendMessage([Messages.HURT, mob.id]);
 	}
 
 	sendChat(text) {
-		this.sendMessage([Types.Messages.CHAT, text]);
+		this.sendMessage([Messages.CHAT, text]);
 	}
 
 	sendLoot(item) {
-		this.sendMessage([Types.Messages.LOOT, item.id]);
+		this.sendMessage([Messages.LOOT, item.id]);
 	}
 
 	sendTeleport(x, y) {
-		this.sendMessage([Types.Messages.TELEPORT, x, y]);
+		this.sendMessage([Messages.TELEPORT, x, y]);
 	}
 
 	sendWho(ids) {
-		this.sendMessage([Types.Messages.WHO, ...ids]);
+		this.sendMessage([Messages.WHO, ...ids]);
 	}
 
 	sendZone() {
-		this.sendMessage([Types.Messages.ZONE]);
+		this.sendMessage([Messages.ZONE]);
 	}
 
 	sendOpen(chest) {
-		this.sendMessage([Types.Messages.OPEN, chest.id]);
+		this.sendMessage([Messages.OPEN, chest.id]);
 	}
 
 	sendCheck(id) {
-		this.sendMessage([Types.Messages.CHECK, id]);
+		this.sendMessage([Messages.CHECK, id]);
 	}
 
 	sendSpendAttr(attr: 'str'|'dex'|'vit'|'ene') {
-		this.sendMessage([Types.Messages.SPEND_ATTR, attr])
+		this.sendMessage([Messages.SPEND_ATTR, attr])
 	}
 
 

@@ -2,6 +2,7 @@ import sanitizer from 'sanitizer'
 
 import * as log from './log'
 import * as Types from '../../shared/gametypes'
+import {Orientations} from '../../shared/constants'
 
 
 
@@ -37,13 +38,13 @@ export function randomOrientation() {
     var o, r = random(4);
     
     if(r === 0)
-        o = Types.Orientations.LEFT;
+        o = Orientations.LEFT;
     if(r === 1)
-        o = Types.Orientations.RIGHT;
+        o = Orientations.RIGHT;
     if(r === 2)
-        o = Types.Orientations.UP;
+        o = Orientations.UP;
     if(r === 3)
-        o = Types.Orientations.DOWN;
+        o = Orientations.DOWN;
     
     return o;
 };

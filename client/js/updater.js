@@ -1,4 +1,4 @@
-import * as Types from '../../shared/gametypes'
+import {Orientations} from '../../shared/constants'
 import Character from './character'
 import Timer from './timer'
 
@@ -105,10 +105,10 @@ export default class Updater {
                 updateFunc = null,
                 endFunc = null;
         
-            if(orientation === Types.Orientations.LEFT || orientation === Types.Orientations.RIGHT) {
+            if(orientation === Orientations.LEFT || orientation === Orientations.RIGHT) {
                 offset = (c.gridW - 2) * ts;
-                startValue = (orientation === Types.Orientations.LEFT) ? c.x - ts : c.x + ts;
-                endValue = (orientation === Types.Orientations.LEFT) ? c.x - offset : c.x + offset;
+                startValue = (orientation === Orientations.LEFT) ? c.x - ts : c.x + ts;
+                endValue = (orientation === Orientations.LEFT) ? c.x - offset : c.x + offset;
                 updateFunc = function(x) {
                     c.setPosition(x, c.y);
                     g.initAnimatedTiles();
@@ -118,10 +118,10 @@ export default class Updater {
                     c.setPosition(z.endValue, c.y);
                     g.endZoning();
                 }
-            } else if(orientation === Types.Orientations.UP || orientation === Types.Orientations.DOWN) {
+            } else if(orientation === Orientations.UP || orientation === Orientations.DOWN) {
                 offset = (c.gridH - 2) * ts;
-                startValue = (orientation === Types.Orientations.UP) ? c.y - ts : c.y + ts;
-                endValue = (orientation === Types.Orientations.UP) ? c.y - offset : c.y + offset;
+                startValue = (orientation === Orientations.UP) ? c.y - ts : c.y + ts;
+                endValue = (orientation === Orientations.UP) ? c.y - offset : c.y + offset;
                 updateFunc = function(y) { 
                     c.setPosition(c.x, y);
                     g.initAnimatedTiles();
@@ -144,7 +144,7 @@ export default class Updater {
         var tick = Math.round(16 / Math.round((c.moveSpeed / (1000 / this.game.renderer.FPS))));
 
         if(c.isMoving() && c.movement.inProgress === false) {
-            if(c.orientation === Types.Orientations.LEFT) {
+            if(c.orientation === Orientations.LEFT) {
                 c.movement.start(this.game.currentTime,
                                  function(x) {
                                     c.x = x;
@@ -159,7 +159,7 @@ export default class Updater {
                                  c.x - 16,
                                  c.moveSpeed);
             }
-            else if(c.orientation === Types.Orientations.RIGHT) {
+            else if(c.orientation === Orientations.RIGHT) {
                 c.movement.start(this.game.currentTime,
                                  function(x) {
                                     c.x = x;
@@ -174,7 +174,7 @@ export default class Updater {
                                  c.x + 16,
                                  c.moveSpeed);
             }
-            else if(c.orientation === Types.Orientations.UP) {
+            else if(c.orientation === Orientations.UP) {
                 c.movement.start(this.game.currentTime,
                                  function(y) {
                                     c.y = y;
@@ -189,7 +189,7 @@ export default class Updater {
                                  c.y - 16,
                                  c.moveSpeed);
             }
-            else if(c.orientation === Types.Orientations.DOWN) {
+            else if(c.orientation === Orientations.DOWN) {
                 c.movement.start(this.game.currentTime,
                                  function(y) {
                                     c.y = y;

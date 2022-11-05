@@ -24,6 +24,7 @@ import connection from './connection'
 import * as Exceptions from  './exceptions'
 import config from './config'
 
+import {Entities, Orientations, Messages} from '../../shared/constants'
 import * as Types from '../../shared/gametypes'
 
 
@@ -306,11 +307,11 @@ export default class Game {
 						this.tryUnlockingAchievement("A_TRUE_WARRIOR");
 					}
 
-					if(item.kind === Types.Entities.CAKE) {
+					if(item.kind === Entities.CAKE) {
 						this.tryUnlockingAchievement("FOR_SCIENCE");
 					}
 					
-					if(item.kind === Types.Entities.FIREPOTION) {
+					if(item.kind === Entities.FIREPOTION) {
 						this.tryUnlockingAchievement("FOXY");
 						this.audioManager.playSound("firefox");
 					}
@@ -574,7 +575,7 @@ export default class Game {
 								}
 
 								entity.isDying = true;
-								entity.setSprite(this.sprites[entity.kind===Types.Entities.RAT? "rat" : "death"]);
+								entity.setSprite(this.sprites[entity.kind===Entities.RAT? "rat" : "death"]);
 								entity.animate("death", 120, 1, () => {
 									log.info(entity.id + " was removed");
 
@@ -654,7 +655,7 @@ export default class Game {
 			}
 		});
 	
-		connection.on(Types.Messages.BLINK, (itemId) => {
+		connection.on(Messages.BLINK, (itemId) => {
 			var item = this.getEntityById(itemId)
 			if(item) {
 				item.blink(150)
@@ -747,17 +748,17 @@ export default class Game {
 			}, 200)
 			this.tryUnlockingAchievement("HUNTER");
 
-			if(kind === Types.Entities.RAT) {
+			if(kind === Entities.RAT) {
 				this.storage.incrementRatCount();
 				this.tryUnlockingAchievement("ANGRY_RATS");
 			}
 			
-			if(kind === Types.Entities.SKELETON || kind === Types.Entities.SKELETON2) {
+			if(kind === Entities.SKELETON || kind === Entities.SKELETON2) {
 				this.storage.incrementSkeletonCount();
 				this.tryUnlockingAchievement("SKULL_COLLECTOR");
 			}
 
-			if(kind === Types.Entities.BOSS) {
+			if(kind === Entities.BOSS) {
 				this.tryUnlockingAchievement("HERO");
 			}
 		})
@@ -1583,7 +1584,7 @@ export default class Game {
 			}
 			this.tryUnlockingAchievement("SMALL_TALK");
 			
-			if(npc.kind === Types.Entities.RICK) {
+			if(npc.kind === Entities.RICK) {
 				this.tryUnlockingAchievement("RICKROLLD");
 			}
 		}
@@ -1946,13 +1947,13 @@ export default class Game {
 				var pos;
 				
 				switch(target.orientation) {
-					case Types.Orientations.UP:
+					case Orientations.UP:
 						pos = {x: target.gridX, y: target.gridY - 1, o: target.orientation}; break;
-					case Types.Orientations.DOWN:
+					case Orientations.DOWN:
 						pos = {x: target.gridX, y: target.gridY + 1, o: target.orientation}; break;
-					case Types.Orientations.LEFT:
+					case Orientations.LEFT:
 						pos = {x: target.gridX - 1, y: target.gridY, o: target.orientation}; break;
-					case Types.Orientations.RIGHT:
+					case Orientations.RIGHT:
 						pos = {x: target.gridX + 1, y: target.gridY, o: target.orientation}; break;
 				}
 				
@@ -2062,16 +2063,16 @@ export default class Game {
 		y = y - c.gridY;
    
 		if(x === 0) {
-			orientation = Types.Orientations.LEFT;
+			orientation = Orientations.LEFT;
 		}
 		else if(y === 0) {
-			orientation = Types.Orientations.UP;
+			orientation = Orientations.UP;
 		}
 		else if(x === c.gridW-1) {
-			orientation = Types.Orientations.RIGHT;
+			orientation = Orientations.RIGHT;
 		}
 		else if(y === c.gridH-1) {
-			orientation = Types.Orientations.DOWN;
+			orientation = Orientations.DOWN;
 		}
 	
 		return orientation;
@@ -2089,10 +2090,10 @@ export default class Game {
 				xoffset = (c.gridW - 2) * ts,
 				yoffset = (c.gridH - 2) * ts;
 		
-			if(z === Types.Orientations.LEFT || z === Types.Orientations.RIGHT) {
-				x = (z === Types.Orientations.LEFT) ? c.x - xoffset : c.x + xoffset;
-			} else if(z === Types.Orientations.UP || z === Types.Orientations.DOWN) {
-				y = (z === Types.Orientations.UP) ? c.y - yoffset : c.y + yoffset;
+			if(z === Orientations.LEFT || z === Orientations.RIGHT) {
+				x = (z === Orientations.LEFT) ? c.x - xoffset : c.x + xoffset;
+			} else if(z === Orientations.UP || z === Orientations.DOWN) {
+				y = (z === Orientations.UP) ? c.y - yoffset : c.y + yoffset;
 			}
 			c.setPosition(x, y);
 		
@@ -2205,7 +2206,7 @@ export default class Game {
 		// this.initPathingGrid()
 		// this.initRenderingGrid()
 
-		// this.player = new Player('player', 'TODO player name', Types.Entities.WARRIOR)
+		// this.player = new Player('player', 'TODO player name', Entities.WARRIOR)
 		// this.initPlayer()
 
 		// this.started = true

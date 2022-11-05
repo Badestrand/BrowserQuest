@@ -4,6 +4,7 @@ import * as _ from 'underscore'
 import log from './log'
 import Area from './area'
 import * as Types from '../../shared/gametypes'
+import {Orientations} from '../../shared/constants'
 import {isInt} from './util'
 
 
@@ -93,15 +94,15 @@ export default class Map {
 			var o;
 			
 			switch(door.to) {
-				case 'u': o = Types.Orientations.UP;
+				case 'u': o = Orientations.UP;
 					break;
-				case 'd': o = Types.Orientations.DOWN;
+				case 'd': o = Orientations.DOWN;
 					break;
-				case 'l': o = Types.Orientations.LEFT;
+				case 'l': o = Orientations.LEFT;
 					break;
-				case 'r': o = Types.Orientations.RIGHT;
+				case 'r': o = Orientations.RIGHT;
 					break;
-				default : o = Types.Orientations.DOWN;
+				default : o = Orientations.DOWN;
 			}
 			
 			doors[self.GridPositionToTileIndex(door.x, door.y)] = {

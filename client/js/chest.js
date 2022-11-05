@@ -1,11 +1,11 @@
 import Entity from './entity'
-import * as Types from '../../shared/gametypes'
+import {Entities} from '../../shared/constants'
 
 
 
 export default class Chest extends Entity {
     constructor(id, kind) {
-	    super(id, Types.Entities.CHEST);
+	    super(id, Entities.CHEST);
     }
 
     getSpriteName() {

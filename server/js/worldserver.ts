@@ -14,6 +14,7 @@ import Chest from './chest'
 import * as Messages from './message'
 import * as Utils from './utils'
 import * as Types from '../../shared/gametypes'
+import {Entities} from '../../shared/constants'
 
 
 
@@ -381,7 +382,7 @@ export default class World {
 		var id = '9'+this.itemCount++,
 			item = null;
 		
-		if(kind === Types.Entities.CHEST) {
+		if(kind === Entities.CHEST) {
 			item = new Chest(id, x, y);
 		} else {
 			item = new Item(id, kind, x, y);
@@ -390,7 +391,7 @@ export default class World {
 	}
 
 	createChest(x, y, items) {
-		var chest = this.createItem(Types.Entities.CHEST, x, y);
+		var chest = this.createItem(Entities.CHEST, x, y);
 		chest.setItems(items);
 		return chest;
 	}

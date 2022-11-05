@@ -5,6 +5,7 @@ import Entity from './entity'
 import Transition from './transition'
 import Timer from './timer'
 import * as Types from '../../shared/gametypes'
+import {Orientations} from '../../shared/constants'
 import {clone} from './util'
 
 
@@ -18,7 +19,7 @@ export default class Character extends Entity {
 		// Position and orientation
 		this.nextGridX = -1;
 		this.nextGridY = -1;
-		this.orientation = Types.Orientations.DOWN;
+		this.orientation = Orientations.DOWN;
 	
 		// Speeds
 		this.atkSpeed = 50;
@@ -90,8 +91,8 @@ export default class Character extends Entity {
 			this.flipSpriteY = false;
 	
 			if(_.indexOf(oriented, animation) >= 0) {
-				animation += "_" + (o === Types.Orientations.LEFT ? "right" : Types.getOrientationAsString(o));
-				this.flipSpriteX = (this.orientation === Types.Orientations.LEFT) ? true : false;
+				animation += "_" + (o === Orientations.LEFT ? "right" : Types.getOrientationAsString(o));
+				this.flipSpriteX = (this.orientation === Orientations.LEFT) ? true : false;
 			}
 
 			this.setAnimation(animation, speed, count, onEndCount);
@@ -184,16 +185,16 @@ export default class Character extends Entity {
 			i = this.step;
 	
 		if(p[i][0] < p[i-1][0]) {
-			this.walk(Types.Orientations.LEFT);
+			this.walk(Orientations.LEFT);
 		}
 		if(p[i][0] > p[i-1][0]) {
-			this.walk(Types.Orientations.RIGHT);
+			this.walk(Orientations.RIGHT);
 		}
 		if(p[i][1] < p[i-1][1]) {
-			this.walk(Types.Orientations.UP);
+			this.walk(Orientations.UP);
 		}
 		if(p[i][1] > p[i-1][1]) {
-			this.walk(Types.Orientations.DOWN);
+			this.walk(Orientations.DOWN);
 		}
 	}
 
@@ -396,13 +397,13 @@ export default class Character extends Entity {
 	 */
 	getOrientationTo(character) {
 		if(this.gridX < character.gridX) {
-			return Types.Orientations.RIGHT;
+			return Orientations.RIGHT;
 		} else if(this.gridX > character.gridX) {
-			return Types.Orientations.LEFT;
+			return Orientations.LEFT;
 		} else if(this.gridY > character.gridY) {
-			return Types.Orientations.UP;
+			return Orientations.UP;
 		} else {
-			return Types.Orientations.DOWN;
+			return Orientations.DOWN;
 		}
 	}
 
