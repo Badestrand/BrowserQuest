@@ -6,6 +6,8 @@ export default class AnimatedTile {
     	this.speed = speed;
     	this.index = index;
     	this.lastTime = 0;
+        this.x = null
+        this.y = null
     }
 
     tick() {

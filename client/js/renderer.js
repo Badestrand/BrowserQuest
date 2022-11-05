@@ -43,6 +43,7 @@ export default class Renderer {
 		this.tablet = Detect.isTablet(window.innerWidth);
 		
 		this.fixFlickeringTimer = new Timer(100);
+		this.targetRect = undefined
 	}
 
 	getWidth() {

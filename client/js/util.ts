@@ -19,7 +19,7 @@ export var TRANSITIONEND = 'transitionend webkitTransitionEnd oTransitionEnd'
 // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
 const wnd = window as any
 wnd.requestAnimFrame = (function(){
-	return wnd.requestAnimationFrame       || 
+	return wnd.requestAnimationFrame    || 
 		wnd.webkitRequestAnimationFrame || 
 		wnd.mozRequestAnimationFrame    || 
 		wnd.oRequestAnimationFrame      || 

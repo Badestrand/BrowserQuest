@@ -6,34 +6,18 @@ import {AllCharacterClasses} from '../../shared/game'
 
 
 
-/* 
-	TODO: This should probably support versioning and also use Character.serialize/unserialize
-	TODO: This should also not really hold the game state
-*/
-
 export default class Storage {
 	constructor() {
 		if(this.hasLocalStorage() && localStorage.data) {
-			this.data = JSON.parse(localStorage.data);
+			this.data = JSON.parse(localStorage.data)
 		} else {
-			this.resetData();
+			this.resetData()
 		}
 	}
 
 	resetData() {
-		const charClass = _.findWhere(AllCharacterClasses, {id: 'barbarian'})
 		this.data = {
 			hasAlreadyPlayed: false,
-			player: {  // TODO: should come from empty player?
-				charClass,
-				name: '',
-				weapon: '',
-				armor: '',
-				image: '',
-				exp: 0,
-				level: 1,
-				attrs: clone(charClass.attributes),
-			},
 			achievements: {
 				unlocked: [],
 				ratCount: 0,
@@ -47,8 +31,8 @@ export default class Storage {
 
 	hasLocalStorage() {
 		try {
-			localStorage.setItem('bq-test', 123)
-			localStorage.removeItem('test')
+			localStorage.setItem('bq-test', '123')
+			localStorage.removeItem('bq-test')
 			return true
 		} catch (exception) {
 			return false
@@ -69,28 +53,9 @@ export default class Storage {
 	}
 
 
-	// PLAYER
+	// MISC
 	hasAlreadyPlayed() {
 		return this.data.hasAlreadyPlayed;
-	}
-
-	initPlayer(name) {
-		this.data.hasAlreadyPlayed = true;
-		this.setPlayerName(name);
-	}
-
-	setPlayerName(name) {
-		this.data.player.name = name;
-		this.save();
-	}
-
-	savePlayer(img, player) {
-		this.data.player.image = img
-		this.data.player = {
-			...this.data.player,
-			...player.serialize(),
-		}
-		this.save()
 	}
 
 
@@ -171,4 +136,7 @@ export default class Storage {
 			this.save();
 		}
 	}
+
+
+	private data: any
 }

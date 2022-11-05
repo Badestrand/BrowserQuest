@@ -20,6 +20,7 @@ import Player from './player'
 import Character from './character'
 import Chest from './chest'
 import connection from './connection'
+import Camera from './camera'
 import * as Mobs from './mobs'
 import * as Exceptions from  './exceptions'
 import config from './config'
@@ -140,7 +141,7 @@ export default class Game {
 	}
 
 
-	async enter({ident, secret}, started_callback) {
+	async enter({ident, secret}, started_callback=null) {
 		const {hero, id, x, y} = await connection.enter({ident, secret})
 		log.info('Entering the world with id '+id+' at '+x+'/'+y)
 
@@ -183,12 +184,9 @@ export default class Game {
 		}, 1500);
 
 		if(!this.storage.hasAlreadyPlayed()) {
-			this.storage.initPlayer(this.player.name);
-			// this.storage.savePlayer(this.renderer.getPlayerImage(), this.player);
 			this.showNotification("Welcome to BrowserQuest!");
 		} else {
 			this.showNotification("Welcome back to BrowserQuest!");
-			this.storage.setPlayerName(name);
 		}
 
 		this.player.onStartPathing((path) => {
@@ -469,7 +467,9 @@ export default class Game {
 			chest.setSprite(this.sprites[chest.getSpriteName()]);
 			chest.setGridPosition(x, y);
 			chest.setAnimation("idle_down", 150);
-			this.addEntity(chest, x, y);
+			// this.addEntity(chest, x, y);
+			this.addEntity(chest);
+			chest.setPosition(x, y)
 		
 			chest.onOpen(() => {
 				chest.stopBlinking();
@@ -798,7 +798,7 @@ export default class Game {
 		})
 
 		connection.onPlayerChangeCurMana((points, isRegen) => {
-			this.player.mana = points
+			this.player.setCurMana(points)
 			this.updateBars()
 		})
 
@@ -1137,7 +1137,7 @@ export default class Game {
 	}
 
 
-	setCursor(name, orientation) {
+	setCursor(name, orientation=undefined) {
 		if(name in this.cursors) {
 			this.currentCursor = this.cursors[name];
 			this.currentCursorOrientation = orientation;
@@ -1422,7 +1422,7 @@ export default class Game {
 		}
 
 		if(!this.isStopped) {
-			requestAnimFrame(this.tick.bind(this));
+			;(window as any).requestAnimFrame(this.tick.bind(this));
 		}
 	}
 
@@ -1471,14 +1471,6 @@ export default class Game {
 		if(attacker.id !== this.playerId) {
 			target.addAttacker(attacker);
 		}
-	}
-
-	/**
-	 * Sends a "hello" message to the server, as a way of initiating the player connection handshake.
-	 * @see GameClient.sendHello
-	 */
-	sendHello(ident, secret) {
-		connection.sendHello(ident, secret);
 	}
 
 	/**
@@ -1922,9 +1914,9 @@ export default class Game {
 		}
 	}
 	
-	isMobOnSameTile(mob, x, y) {
-		var X = x || mob.gridX,
-			Y = y || mob.gridY,
+	isMobOnSameTile(mob, x=undefined, y=undefined) {
+		var X = x ?? mob.gridX,
+			Y = y ?? mob.gridY,
 			list = this.entityGrid[Y][X],
 			result = false;
 		
@@ -2065,7 +2057,7 @@ export default class Game {
 	}
 
 	getZoningOrientation(x, y) {
-		var orientation = "",
+		var orientation = null,
 			c = this.camera;
 
 		x = x - c.gridX;
@@ -2087,8 +2079,8 @@ export default class Game {
 		return orientation;
 	}
 
-	startZoningFrom(x, y) {
-		this.zoningOrientation = this.getZoningOrientation(x, y);
+	startZoningFrom(x0, y0) {
+		this.zoningOrientation = this.getZoningOrientation(x0, y0);
 	
 		if(this.renderer.mobile || this.renderer.tablet) {
 			var z = this.zoningOrientation,
@@ -2210,23 +2202,23 @@ export default class Game {
 		throw new Error('Not implemented')
 		log.debug("Beginning restart")
 
-		this.entities = {}
-		this.initEntityGrid()
-		this.initPathingGrid()
-		this.initRenderingGrid()
+		// this.entities = {}
+		// this.initEntityGrid()
+		// this.initPathingGrid()
+		// this.initRenderingGrid()
 
-		this.player = new Player('player', 'TODO player name', Types.Entities.WARRIOR)
-		this.initPlayer()
+		// this.player = new Player('player', 'TODO player name', Types.Entities.WARRIOR)
+		// this.initPlayer()
 
-		this.started = true
-		connection.enable()
-		this.sendHello(hero.ident, hero.secret)
+		// this.started = true
+		// connection.enable()
+		// this.sendHello(hero.ident, hero.secret)
 
-		this.storage.incrementRevives()
+		// this.storage.incrementRevives()
 
-		if(this.renderer.mobile || this.renderer.tablet) {
-			this.renderer.clearScreen(this.renderer.context)
-		}
+		// if(this.renderer.mobile || this.renderer.tablet) {
+		// 	this.renderer.clearScreen(this.renderer.context)
+		// }
 
 		log.debug("Finished restart")
 	}
@@ -2428,4 +2420,81 @@ export default class Game {
 			}
 		}
 	}
+
+
+
+	private drawTarget: boolean
+	private clearTarget: boolean
+
+	private ready: boolean
+	public readyPromise: Promise<void>
+	private started: boolean
+	private hasNeverStarted: boolean
+	private cursorVisible: boolean
+
+	private updater: Updater
+	public renderer: Renderer
+	private pathfinder:Pathfinder
+	private bubbleManager: BubbleManager
+	public audioManager: AudioManager
+	private infoManager: InfoManager
+
+	private entities: any
+	private obsoleteEntities: any
+	private deathpositions: any
+	private entityGrid: any
+	private pathingGrid: any
+	private renderingGrid: any
+	private itemGrid: any
+	private currentCursor: any
+	public mouse: any
+	private zoningQueue: any
+	private previousClickPosition: any
+
+	private selectedX: number
+	private selectedY: number
+	private selectedCellVisible: boolean
+	private targetColor: string
+	private targetCellVisible: boolean
+	private hoveringTarget: boolean
+	private hoveringMob: boolean
+	private hoveringItem: boolean
+	private hoveringCollidingTile: boolean
+
+	private currentZoning: any
+	private cursors: any
+	private sprites: any
+	private shadows: any
+	private sparksAnimation: any
+	private storage: Storage
+	private animatedTiles: any
+	private debugPathing: boolean
+	private spriteNames: Array<string>
+	private hoveringPlateauTile: any
+	private lastHovered: any
+	private hoveringChest: any
+	private hoveringNpc: any
+	private currentCursorOrientation: any
+	private spritesets: any
+	private targetAnimation: any
+
+	public map: Map
+	private camera: Camera
+	public player: Player
+	private playerId: number
+	private currentTime: any
+	private zoningOrientation: any
+	private achievements: any
+	private isStopped: boolean
+
+	private gamestart_callback: any
+	private disconnect_callback: any
+	private playerdeath_callback: any
+	private playerhp_callback: any
+	private playerhurt_callback: any
+	private equipment_callback: any
+	private nbplayers_callback: any
+	private invincible_callback: any
+	private unlock_callback: any
+	private notification_callback: any
 }

@@ -30,6 +30,10 @@ export default class Entity extends EventEmitter {
 		this.isHighlighted = false;
 		this.visible = true;
 		this.isFading = false;
+
+		this.isDirty = undefined
+		this.dirty_callback = undefined
+		this.dirtyRect = undefined
 		this.setDirty();
 	}
 

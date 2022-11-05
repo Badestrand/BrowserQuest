@@ -233,6 +233,7 @@ export default class Player extends Character {
 		}
 	}
 
+	public lastCheckpoint: any
 	public invincible: boolean
 	public invincible_callback: any
 	public invincibleTimeout: any
@@ -246,6 +247,7 @@ export default class Player extends Character {
 	public armorName: string
 	public isLootMoving: boolean
 	public nameOffsetY: number
+	public isOnPlateau: boolean
 
 
 
@@ -337,6 +339,11 @@ export default class Player extends Character {
 	setMaxHitpoints(points: number) {
 		this.maxHitpoints = points
 		this.hitpoints = Math.min(this.hitpoints, this.maxHitpoints)
+		this.emit('update')
+	}
+
+	setCurMana(points: number) {
+		this.mana = points
 		this.emit('update')
 	}
 
