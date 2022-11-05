@@ -11,6 +11,18 @@ type MobVariantInfo = {
 	armor: number
 	weapon: number
 	exp: number
+	moveSpeed: number
+	attackCooldown: number
+	graphics: {
+		attackAnimationSpeed: number
+		walkAnimationSpeed: number
+		idleAnimationSpeed: number
+		shadowOffsetY: number
+	}
+	behaviour: {
+		isAggressive: boolean
+		aggroRange: number
+	}
 }
 
 

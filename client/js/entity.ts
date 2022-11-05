@@ -288,7 +288,7 @@ export default class Entity extends EventEmitter {
 	protected flipSpriteY: boolean
 	private animations: any
 	protected currentAnimation: any
-	private shadowOffsetY: number
+	protected shadowOffsetY: number
 	private isDirty: boolean
 	private ready_callback: any
 	private dirty_callback: any

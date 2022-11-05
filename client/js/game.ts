@@ -21,7 +21,6 @@ import Player from './player'
 import Character from './character'
 import Chest from './chest'
 import connection from './connection'
-import * as Mobs from './mobs'
 import * as Exceptions from  './exceptions'
 import config from './config'
 
@@ -575,7 +574,7 @@ export default class Game {
 								}
 
 								entity.isDying = true;
-								entity.setSprite(this.sprites[entity instanceof Mobs.Rat ? "rat" : "death"]);
+								entity.setSprite(this.sprites[entity.kind===Types.Entities.RAT? "rat" : "death"]);
 								entity.animate("death", 120, 1, () => {
 									log.info(entity.id + " was removed");
 
@@ -1595,9 +1594,7 @@ export default class Game {
 	 * @param {Function} callback The function to call back (must accept one entity argument).
 	 */
 	forEachEntity(callback) {
-		_.each(this.entities, (entity) => {
-			callback(entity);
-		});
+		_.each(this.entities, callback);
 	}
 
 	/**

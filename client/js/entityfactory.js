@@ -25,6 +25,7 @@ EntityFactory.createEntity = function(kind, id, name) {
 
 //===== mobs ======
 
+
 EntityFactory.builders = [];
 
 EntityFactory.builders[Types.Entities.WARRIOR] = function(id, name) {
@@ -32,55 +33,55 @@ EntityFactory.builders[Types.Entities.WARRIOR] = function(id, name) {
 };
 
 EntityFactory.builders[Types.Entities.RAT] = function(id) {
-    return new Mobs.Rat(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.RAT}))
 };
 
 EntityFactory.builders[Types.Entities.SKELETON] = function(id) {
-    return new Mobs.Skeleton(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.SKELETON}))
 };
 
 EntityFactory.builders[Types.Entities.SKELETON2] = function(id) {
-    return new Mobs.Skeleton2(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.SKELETON2}))
 };
 
 EntityFactory.builders[Types.Entities.SPECTRE] = function(id) {
-    return new Mobs.Spectre(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.SPECTRE}))
 };
 
 EntityFactory.builders[Types.Entities.DEATHKNIGHT] = function(id) {
-    return new Mobs.Deathknight(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.DEATHKNIGHT}))
 };
 
 EntityFactory.builders[Types.Entities.GOBLIN] = function(id) {
-    return new Mobs.Goblin(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.GOBLIN}))
 };
 
 EntityFactory.builders[Types.Entities.OGRE] = function(id) {
-    return new Mobs.Ogre(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.OGRE}))
 };
 
 EntityFactory.builders[Types.Entities.CRAB] = function(id) {
-    return new Mobs.Crab(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.CRAB}))
 };
 
 EntityFactory.builders[Types.Entities.SNAKE] = function(id) {
-    return new Mobs.Snake(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.SNAKE}))
 };
 
 EntityFactory.builders[Types.Entities.EYE] = function(id) {
-    return new Mobs.Eye(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.EYE}))
 };
 
 EntityFactory.builders[Types.Entities.BAT] = function(id) {
-    return new Mobs.Bat(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.BAT}))
 };
 
 EntityFactory.builders[Types.Entities.WIZARD] = function(id) {
-    return new Mobs.Wizard(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.WIZARD}))
 };
 
 EntityFactory.builders[Types.Entities.BOSS] = function(id) {
-    return new Mobs.Boss(id);
+    return new Mob(id, _.findWhere(Types.AllMobVariants, {kind: Types.Entities.BOSS}))
 };
 
 //===== items ======

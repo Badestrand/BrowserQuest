@@ -67,6 +67,12 @@ export default class Updater {
             m = null,
             z = this.game.currentZoning;
 
+        // for (let key in this.game.entities) {
+        //     if (this.game.entities[key] === undefined) {
+        //         console.log('game entity undefined:', key)
+        //     }
+        // }
+
         this.game.forEachEntity(function(entity) {
             m = entity.movement;
             if(m) {
