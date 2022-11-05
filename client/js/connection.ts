@@ -200,17 +200,6 @@ class Connection extends EventEmitter {
 	}
 
 
-	receiveWelcome(data) {
-		var id = data[1],
-			x = data[2],
-			y = data[3]
-	
-		if(this.welcome_callback) {
-			this.welcome_callback(id, x, y);
-		}
-	}
-
-
 	receiveMove(data) {
 		var id = data[1],
 			x = data[2],
@@ -430,7 +419,9 @@ class Connection extends EventEmitter {
 
 
 	receiveBlink(data) {
-		this.emit(Messages.BLINK, data[1])
+		if (this.blink_callback) {
+			this.blink_callback(data[1])
+		}
 	}
 
 
@@ -439,6 +430,10 @@ class Connection extends EventEmitter {
 	// 	const exp = data[0]
 	// 	this.emit(Messages.GAINEXP, exp)
 	// }
+
+	onReceiveBlink(callback) {
+		this.blink_callback = callback
+	}
 
 	onDispatched(callback) {
 		this.dispatched_callback = callback;
@@ -656,6 +651,7 @@ class Connection extends EventEmitter {
 	private max_hitpoints_callback: any
 	private max_mana_callback: any
 	private mana_callback: any
+	private blink_callback: any
 	private destroy_callback: any
 	private isTimeout: boolean
 }

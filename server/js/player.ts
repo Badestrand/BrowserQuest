@@ -226,21 +226,21 @@ export default class Player extends Character {
 					var kind = item.kind;
 					
 					if(Types.isItem(kind)) {
-						this.broadcast(item.despawn());
+						this.broadcast(new Messages2.Despawn(item.id))
 						this.world.removeEntity(item);
-						
+
 						if(kind === Entities.FIREPOTION) {
 							this.hitpoints = this.maxHitpoints
-							this.broadcast(this.equip(Entities.FIREFOX))
+							this.broadcast(new Messages2.EquipItem(this, Entities.FIREFOX))
 							this.firepotionTimeout = setTimeout(() => {
-								this.broadcast(this.equip(this.armor.variant.kind)) // return to normal after 15 sec
+								this.broadcast(new Messages2.EquipItem(this, this.armor.variant.kind)) // return to normal after 15 sec
 								this.firepotionTimeout = null
 							}, 15000)
 							this.send(new Messages2.MaxHitpoints(this.maxHitpoints))
 						}
 						else if(Types.isHealingItem(kind)) {
 							var amount;
-							
+
 							switch(kind) {
 								case Entities.FLASK: 
 									amount = 40;
@@ -251,13 +251,13 @@ export default class Player extends Character {
 							}
 							
 							if(!this.hasFullHealth()) {
-								this.regenHealthBy(amount);
-								this.world.pushToPlayer(this, this.health());
+								this.regenHealthBy(amount)
+								this.world.pushToPlayer(this, new Messages2.CurHitpoints(this.hitpoints, false))
 							}
 						} else if(Types.isArmor(kind) || Types.isWeapon(kind)) {
-							this.equipItem(item);
-							this.broadcast(this.equip(kind));
-							this.send(this.equip(kind));
+							this.equipItem(item)
+							this.broadcast(new Messages2.EquipItem(this, kind))
+							this.send(new Messages2.EquipItem(this, kind))
 						}
 					}
 				}
@@ -427,11 +427,6 @@ export default class Player extends Character {
 
 	onBroadcastToZone(callback) {
 		this.broadcastzone_callback = callback;
-	}
-
-
-	equip(item) {
-		return new Messages2.EquipItem(this, item);
 	}
 
 

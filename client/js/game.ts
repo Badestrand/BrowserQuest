@@ -408,7 +408,7 @@ export default class Game {
 			return this.findPath(this.player, x, y, ignored);
 		});
 	
-		this.player.onDeath(() => {
+		this.player.onDeath((isDisconnected: boolean) => {
 			log.info(this.playerId + " is dead");
 		
 			this.player.stopBlinking();
@@ -433,7 +433,10 @@ export default class Game {
 			});
 		
 			this.audioManager.fadeOutCurrentMusic();
-			this.audioManager.playSound("death");
+
+			if (!isDisconnected) {
+				this.audioManager.playSound("death");
+			}
 		});
 	
 		this.player.onHasMoved((player) => {
@@ -633,21 +636,22 @@ export default class Game {
 			if(entity) {
 				log.info("Despawning " + Types.getKindAsString(entity.kind) + " (" + entity.id+ ")");
 				
-				if(entity.gridX === this.previousClickPosition.x
-				&& entity.gridY === this.previousClickPosition.y) {
+				if(entity.gridX === this.previousClickPosition.x && entity.gridY === this.previousClickPosition.y) {
 					this.previousClickPosition = {};
 				}
 				
 				if(entity instanceof Item) {
 					this.removeItem(entity);
-				} else if(entity instanceof Character) {
+				}
+				else if(entity instanceof Character) {
 					entity.forEachAttacker((attacker) => {
 						if(attacker.canReachTarget()) {
 							attacker.hit();
 						}
 					});
 					entity.die();
-				} else if(entity instanceof Chest) {
+				}
+				else if(entity instanceof Chest) {
 					entity.open();
 				}
 				
@@ -655,7 +659,7 @@ export default class Game {
 			}
 		});
 	
-		connection.on(Messages.BLINK, (itemId) => {
+		connection.onReceiveBlink((itemId) => {
 			var item = this.getEntityById(itemId)
 			if(item) {
 				item.blink(150)
@@ -867,7 +871,7 @@ export default class Game {
 		
 		connection.onDisconnected((message) => {
 			if(this.player) {
-				this.player.die();
+				this.player.die(true)
 			}
 			if(this.disconnect_callback) {
 				this.disconnect_callback(message);
@@ -2027,15 +2031,12 @@ export default class Game {
 						this.audioManager.playSound("hit"+Math.floor(Math.random()*2+1));
 					}
 					
-					if(character.hasTarget() && character.target.id === this.playerId && this.player && !this.player.invincible) {
-						connection.sendHurt(character);
+					if(this.player && character.target?.id===this.player.id && !this.player.invincible) {
+						connection.sendHurt(character)
 					}
 				}
 			} else {
-				if(character.hasTarget()
-				&& character.isDiagonallyAdjacent(character.target)
-				&& character.target instanceof Player
-				&& !character.target.isMoving()) {
+				if(character.hasTarget() && character.isDiagonallyAdjacent(character.target) && character.target instanceof Player && !character.target.isMoving()) {
 					character.follow(character.target);
 				}
 			}

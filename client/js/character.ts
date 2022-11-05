@@ -537,12 +537,12 @@ export default class Character extends Entity {
 		this.emit('update')
 	}
 
-	die() {
+	die(isDisconnected: boolean=false) {
 		this.removeTarget();
 		this.isDead = true;
 	
 		if(this.death_callback) {
-			this.death_callback();
+			this.death_callback(isDisconnected);
 		}
 	}
 

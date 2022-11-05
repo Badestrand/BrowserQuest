@@ -1,6 +1,9 @@
 import {Entities} from '../constants'
 
 
+const HPFAC = 8
+
+
 
 
 const AllMobVariants: Array<MobVariantInfo> = [{
@@ -11,7 +14,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		burger: 10,
 		firepotion: 5
 	},
-	hp: 25,
+	hp: 25*HPFAC,
 	armor: 1,
 	weapon: 1,
 	exp: 25,
@@ -36,7 +39,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		leatherarmor: 10,
 		firepotion: 5
 	},
-	hp: 60,
+	hp: 60*HPFAC,
 	armor: 2,
 	weapon: 1,
 	exp: 60,
@@ -60,7 +63,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		axe: 10,
 		firepotion: 5
 	},
-	hp: 80,
+	hp: 80*HPFAC,
 	armor: 2,
 	weapon: 1,
 	exp: 80,
@@ -85,7 +88,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		axe: 10,
 		firepotion: 5
 	},
-	hp: 90,
+	hp: 90*HPFAC,
 	armor: 2,
 	weapon: 1,
 	exp: 90,
@@ -109,7 +112,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		platearmor: 20,
 		firepotion: 5
 	},
-	hp: 100,
+	hp: 100*HPFAC,
 	armor: 2,
 	weapon: 6,
 	exp: 100,
@@ -134,7 +137,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		axe: 20,
 		firepotion: 5
 	},
-	hp: 110,
+	hp: 110*HPFAC,
 	armor: 2,
 	weapon: 2,
 	exp: 110,
@@ -159,7 +162,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		morningstar: 10,
 		firepotion: 5
 	},
-	hp: 150,
+	hp: 150*HPFAC,
 	armor: 3,
 	weapon: 2,
 	exp: 150,
@@ -185,7 +188,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		morningstar: 20,
 		firepotion: 5
 	},
-	hp: 200,
+	hp: 200*HPFAC,
 	armor: 3,
 	weapon: 2,
 	exp: 200,
@@ -210,7 +213,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		bluesword: 15,
 		firepotion: 5
 	},
-	hp: 200,
+	hp: 200*HPFAC,
 	armor: 3,
 	weapon: 3,
 	exp: 200,
@@ -235,7 +238,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		redsword: 10,
 		firepotion: 5
 	},
-	hp: 200,
+	hp: 200*HPFAC,
 	armor: 3,
 	weapon: 3,
 	exp: 200,
@@ -260,7 +263,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		redsword: 30,
 		firepotion: 5
 	},
-	hp: 250,
+	hp: 250*HPFAC,
 	armor: 2,
 	weapon: 4,
 	exp: 250,
@@ -283,7 +286,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		burger: 95,
 		firepotion: 5
 	},
-	hp: 250,
+	hp: 250*HPFAC,
 	armor: 3,
 	weapon: 3,
 	exp: 250,
@@ -305,7 +308,7 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 	drops: {
 		goldensword: 100
 	},
-	hp: 700,
+	hp: 700*HPFAC,
 	armor: 6,
 	weapon: 7,
 	exp: 700,

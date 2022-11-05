@@ -58,17 +58,16 @@ export default class World {
 			}
 		});
 		
-		// this.onRegenTick(function() {
-		// 	self.forEachCharacter(function(character) {
-		// 		if(!character.hasFullHealth()) {
-		// 			character.regenHealthBy(Math.floor(character.maxHitpoints / 25));
-			
-		// 			if(character.type === 'player') {
-		// 				self.pushToPlayer(character, character.regen());
-		// 			}
-		// 		}
-		// 	});
-		// });
+		this.onRegenTick(function() {
+			self.forEachCharacter(function(character) {
+				if(!character.hasFullHealth()) {
+					character.regenHealthBy(Math.floor(character.maxHitpoints / 100));
+					if(character.type === 'player') {
+						self.pushToPlayer(character, new Messages.CurHitpoints(character.hitpoints, true))
+					}
+				}
+			})
+		})
 	}
 
 
@@ -352,7 +351,7 @@ export default class World {
 
 
 	removePlayer(player) {
-		player.broadcast(player.despawn());
+		player.broadcast(new Messages.Despawn(player.id))
 		this.removeEntity(player);
 		delete this.players[player.id];
 		delete this.outgoingQueues[player.id];
@@ -512,7 +511,8 @@ export default class World {
 	
 	broadcastAttacker(character) {
 		if(character) {
-			this.pushToAdjacentGroups(character.group, character.attack(), character.id);
+			const message = new Messages.Attack(character.id, character.target)
+			this.pushToAdjacentGroups(character.group, message, character.id)
 		}
 		if(this.attack_callback) {
 			this.attack_callback(character);
@@ -523,8 +523,8 @@ export default class World {
 		var self = this;
 
 		if(entity.type === 'player') {
-			// A player is only aware of his own hitpoints
-			this.pushToPlayer(entity, entity.health());
+			// A player is only aware of their own hitpoints
+			this.pushToPlayer(entity, new Messages.CurHitpoints(entity.hitpoints, false))
 		}
 		
 		if(entity.type === 'mob') {
@@ -540,16 +540,16 @@ export default class World {
 				const exp = mob.variant.exp
 				this.pushToPlayer(attacker, new Messages.Kill(mob, exp))
 				attacker.addExperience(exp)
-				this.pushToAdjacentGroups(mob.group, mob.despawn()); // Despawn must be enqueued before the item drop
+				this.pushToAdjacentGroups(mob.group, new Messages.Despawn(mob.id)) // Despawn must be enqueued before the item drop
 				if(item) {
-					this.pushToAdjacentGroups(mob.group, mob.drop(item));
+					this.pushToAdjacentGroups(mob.group, new Messages.Drop(mob, item))
 					this.handleItemDespawn(item);
 				}
 			}
 	
 			if(entity.type === "player") {
 				this.handlePlayerVanish(entity);
-				this.pushToAdjacentGroups(entity.group, entity.despawn());
+				this.pushToAdjacentGroups(entity.group, new Messages.Despawn(entity.id))
 			}
 	
 			this.removeEntity(entity);
@@ -557,7 +557,7 @@ export default class World {
 	}
 	
 	despawn(entity) {
-		this.pushToAdjacentGroups(entity.group, entity.despawn());
+		this.pushToAdjacentGroups(entity.group, new Messages.Despawn(entity.id))
 
 		if(entity.id in this.entities) {
 			this.removeEntity(entity);
@@ -826,7 +826,7 @@ export default class World {
 	}
 	
 	handleOpenedChest(chest, player) {
-		this.pushToAdjacentGroups(chest.group, chest.despawn());
+		this.pushToAdjacentGroups(chest.group, new Messages.Despawn(chest.id))
 		this.removeEntity(chest);
 		
 		var kind = chest.getRandomItem();
