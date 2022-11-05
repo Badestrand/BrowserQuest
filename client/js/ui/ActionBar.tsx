@@ -4,7 +4,7 @@ import {useState, useEffect, useRef} from 'react'
 
 import CharacterScreen from './CharacterScreen'
 import Game from '../game'
-import {showPopup, closePopup, showParchment, hideParchment} from './misc'
+import {showPopup, closePopup, showParchment, hideParchment} from './utils'
 
 
 

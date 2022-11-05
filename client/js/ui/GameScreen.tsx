@@ -3,7 +3,7 @@ import {useState, useEffect, useRef} from 'react'
 
 import ActionBar from './ActionBar'
 import Game from '../game'
-import {showParchment, hideParchment} from './misc'
+import {showParchment, hideParchment} from './utils'
 
 
 

@@ -2,7 +2,7 @@ import * as _ from 'underscore'
 
 import log from './log'
 import Area from './area'
-import * as Detect from './detect'
+import {canPlayMP3, isSafari, isWindows} from './ui/utils'
 
 
 
@@ -11,7 +11,7 @@ export default class AudioManager {
         var self = this;
     
         this.enabled = false;
-        this.extension = Detect.canPlayMP3() ? "mp3" : "ogg";
+        this.extension = canPlayMP3() ? "mp3" : "ogg";
         this.sounds = {};
         this.game = game;
         this.currentMusic = null;
@@ -25,7 +25,7 @@ export default class AudioManager {
             _.each(self.soundNames, function(name) { self.loadSound(name, function() {
                     counter -= 1;
                     if(counter === 0) {
-                        if(!Detect.isSafari()) { // Disable music on Safari - See bug 738008
+                        if(!isSafari()) { // Disable music on Safari - See bug 738008
                             loadMusicFiles();
                         }
                     }
@@ -46,7 +46,7 @@ export default class AudioManager {
             }
         };
     
-        if(!(Detect.isSafari() && Detect.isWindows())) {
+        if(!(isSafari() && isWindows())) {
             loadSoundFiles();
         } else {
             this.enabled = false; // Disable audio on Safari Windows

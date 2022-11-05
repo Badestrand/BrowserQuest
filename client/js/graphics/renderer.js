@@ -8,7 +8,7 @@ import Character from '../character'
 import Player from '../player'
 import Timer from '../timer'
 import Sprite from './sprite'
-import * as Detect from '../detect'
+import {isTablet, isWindows} from '../ui/utils'
 
 
 
@@ -40,7 +40,7 @@ export default class Renderer {
 		this.animatedTileCount = 0;
 		this.highTileCount = 0;
 	
-		this.tablet = Detect.isTablet(window.innerWidth);
+		this.tablet = isTablet(window.innerWidth);
 		
 		this.fixFlickeringTimer = new Timer(100);
 		this.targetRect = undefined
@@ -128,7 +128,7 @@ export default class Renderer {
 			case 1:
 				fontsize = 10; break;
 			case 2:
-				fontsize = Detect.isWindows() ? 10 : 13; break;
+				fontsize = isWindows() ? 10 : 13; break;
 			case 3:
 				fontsize = 20;
 		}
