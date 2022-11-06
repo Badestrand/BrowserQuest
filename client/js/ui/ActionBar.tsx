@@ -103,13 +103,14 @@ function AchievementsScreen({achievements, onClose}: any) {
 export default class ActionBar extends React.Component<any, any> {
 	constructor(props) {
 		super(props)
+		const {game} = props
 		this.state = {
 			achievementsPopup: null,
 			characterPopup: null,
 			helpPopup: null,
 			showPopulation: false,
-			worldPlayers: 1,
-			totalPlayers: 1,
+			worldPlayers: game.population.worldPlayers,
+			totalPlayers: game.population.totalPlayers,
 			healthBlinking: false,
 			isChatActive: false,
 			newAchievement: null,
@@ -134,6 +135,7 @@ export default class ActionBar extends React.Component<any, any> {
 		})
 		game.onNbPlayersChange((worldPlayers, totalPlayers) => {
 			this.setState({worldPlayers, totalPlayers})
+			console.log('ActionBar, on population change', worldPlayers, totalPlayers)
 		})
 		game.onPlayerHealthChange((hp, maxHp) => {
 			this.forceUpdate()

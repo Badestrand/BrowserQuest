@@ -114,19 +114,6 @@ export class CurHitpoints extends Message {
 }
 
 
-export class MaxHitpoints extends Message {
-	constructor(maxHitpoints) {
-		super()
-		this.maxHitpoints = maxHitpoints;
-	}
-
-	serialize() {
-		return [Messages.MAX_HITPOINTS, this.maxHitpoints];
-	}
-
-	public maxHitpoints: any
-}
-
 
 export class CurMana extends Message {
 	constructor(points, isRegen) {
@@ -146,20 +133,6 @@ export class CurMana extends Message {
 
 	public points: any
 	public isRegen: any
-}
-
-
-export class MaxMana extends Message {
-	constructor(points) {
-		super()
-		this.points = points;
-	}
-
-	serialize() {
-		return [Messages.MAX_MANA, this.points];
-	}
-
-	public points: any
 }
 
 

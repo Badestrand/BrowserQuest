@@ -7,7 +7,7 @@ import log from '../log'
 import Camera from './camera'
 import Item from '../item'
 import Character from '../character'
-import Player from '../player'
+import PlayerGeneral from '../player-general'
 import Timer from '../timer'
 import Sprite from './sprite'
 import {isTablet, isWindows} from '../ui/utils'
@@ -499,7 +499,7 @@ export default class Renderer {
 			s = this.scale,
 			spr;
 			
-		if(entity instanceof Player && entity.hasWeapon()) {
+		if(entity instanceof PlayerGeneral && entity.hasWeapon()) {
 			var weapon = this.game.sprites[entity.getWeaponName()];
 			spr = weapon;
 		} else {
@@ -566,7 +566,7 @@ export default class Renderer {
 	
 	drawEntityName(entity) {
 		this.context.save();
-		if(entity.name && entity instanceof Player) {
+		if(entity.name && entity instanceof PlayerGeneral) {
 			var color = (entity.id === this.game.playerId) ? "#fcda5c" : "white";
 			this.drawText(entity.name,
 						  (entity.x + 8) * this.scale,

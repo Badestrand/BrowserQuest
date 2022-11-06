@@ -16,7 +16,7 @@ import * as ws from './ws'
 
 function main(config) {
 	const server = new ws.socketIOServer(config.host, config.port, config.clientUrl)
-	const worlds = []
+	const worlds: Array<WorldServer> = []
 	let lastTotalPlayers = 0
 	log.setLevel(config.debug_level)
 
@@ -74,7 +74,7 @@ function main(config) {
 			}
 
 			// simply fill each world sequentially until they are full
-			const world = _.detect(worlds, (world) => world.playerCount < config.nb_players_per_world)
+			const world = _.detect(worlds, (world) => world.getPlayerCount() < config.nb_players_per_world)
 			world.updatePopulation()
 
 			const player = new Player(heroInfo, connection, world)

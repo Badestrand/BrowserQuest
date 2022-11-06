@@ -18,6 +18,7 @@ import Storage from './storage'
 import Mob from './mob'
 import Npc from './npc'
 import Player from './player'
+import PlayerGeneral from './player-general'
 import Character from './character'
 import Chest from './chest'
 import connection from './connection'
@@ -57,6 +58,11 @@ export default class Game {
 		this.mouse = { x: 0, y: 0 };
 		this.zoningQueue = [];
 		this.previousClickPosition = {};
+
+		this.population = {
+			totalPlayers: 1,
+			worldPlayers: 1,
+		}
 
 		this.selectedX = 0;
 		this.selectedY = 0;
@@ -198,7 +204,7 @@ export default class Game {
 			if(this.player.isMovingToLoot()) {
 				this.player.isLootMoving = false;
 			}
-			else if(!this.player.isAttacking()) {
+			if(!this.player.isAttacking()) {
 				connection.sendMove(x, y);
 			}
 
@@ -498,7 +504,7 @@ export default class Game {
 
 						this.addEntity(entity);
 				
-						log.debug("Spawned " + Types.getKindAsString(entity.kind) + " (" + entity.id + ") at "+entity.gridX+", "+entity.gridY);
+						log.info("Spawned " + Types.getKindAsString(entity.kind) + " (" + entity.id + ") at "+entity.gridX+", "+entity.gridY);
 				
 						if(entity instanceof Character) {
 							entity.onBeforeStep(() => {
@@ -525,7 +531,7 @@ export default class Game {
 										entity.lookAtTarget();
 									}
 						
-									if(entity instanceof Player) {
+									if(entity instanceof PlayerGeneral) {
 										var gridX = entity.destination.gridX,
 											gridY = entity.destination.gridY;
 
@@ -715,7 +721,7 @@ export default class Game {
 			if(attacker && target && attacker.id !== this.playerId) {
 				log.debug(attacker.id + " attacks " + target.id);
 				
-				if(attacker && target instanceof Player && target.id !== this.playerId && target.target && target.target.id === attacker.id && attacker.getDistanceToEntity(target) < 3) {
+				if(attacker && target instanceof PlayerGeneral && target.id !== this.playerId && target.target && target.target.id === attacker.id && attacker.getDistanceToEntity(target) < 3) {
 					setTimeout(() => {
 						this.createAttackLink(attacker, target);
 					}, 200); // delay to prevent other players attacking mobs from ending up on the same tile as they walk towards each other.
@@ -796,22 +802,12 @@ export default class Game {
 				this.updateBars();
 			}
 		});
-	
-		connection.onPlayerChangeMaxHitpoints((points) => {
-			this.player.setMaxHitpoints(points)
-			this.updateBars()
-		})
 
 		connection.onPlayerChangeCurMana((points, isRegen) => {
 			this.player.setCurMana(points)
 			this.updateBars()
 		})
 
-		connection.onPlayerChangeMaxMana((points) => {
-			this.player.setMaxMana(points)
-			this.updateBars()
-		})
-	
 		connection.onPlayerEquipItem((playerId, itemKind) => {
 			var player = this.getEntityById(playerId),
 				itemName = Types.getKindAsString(itemKind);
@@ -864,6 +860,10 @@ export default class Game {
 		});
 	
 		connection.onPopulationChange((worldPlayers, totalPlayers) => {
+			this.population = {
+				worldPlayers,
+				totalPlayers,
+			}
 			if(this.nbplayers_callback) {
 				this.nbplayers_callback(worldPlayers, totalPlayers);
 			}
@@ -1357,7 +1357,7 @@ export default class Game {
 		
 			if(entity.nextGridX >= 0 && entity.nextGridY >= 0) {
 				this.entityGrid[entity.nextGridY][entity.nextGridX][entity.id] = entity;
-				if(!(entity instanceof Player)) {
+				if(!(entity instanceof PlayerGeneral)) {
 					this.pathingGrid[entity.nextGridY][entity.nextGridX] = 1;
 				}
 			}
@@ -1392,7 +1392,7 @@ export default class Game {
 		if(entity) {
 			if(entity instanceof Character || entity instanceof Chest) {
 				this.entityGrid[y][x][entity.id] = entity;
-				if(!(entity instanceof Player)) {
+				if(!(entity instanceof PlayerGeneral)) {
 					this.pathingGrid[y][x] = 1;
 				}
 			}
@@ -1455,7 +1455,7 @@ export default class Game {
 			return this.entities[id];
 		}
 		else {
-			log.error("Unknown entity id : " + id, true);
+			log.error("Unknown entity id : " + id);
 		}
 	}
 
@@ -1524,35 +1524,28 @@ export default class Game {
 		}
 	}
 
-	/**
-	 * Moves the current player to a given target location.
-	 * @see makeCharacterGoTo
-	 */
+
 	makePlayerGoTo(x, y) {
 		this.makeCharacterGoTo(this.player, x, y);
 	}
 
-	/**
-	 * Moves the current player towards a specific item.
-	 * @see makeCharacterGoTo
-	 */
+
 	makePlayerGoToItem(item) {
 		if(item) {
 			this.player.isLootMoving = true;
-			this.makePlayerGoTo(item.gridX, item.gridY);
-			connection.sendLootMove(item, item.gridX, item.gridY);
+			this.makeCharacterGoTo(this.player, item.gridX, item.gridY)
+			// connection.sendLootMove(item, item.gridX, item.gridY);
 		}
 	}
 
-	/**
-	 *
-	 */
+
 	makePlayerTalkTo(npc) {
 		if(npc) {
 			this.player.setTarget(npc);
 			this.player.follow(npc);
 		}
 	}
+
 
 	makePlayerOpenChest(chest) {
 		if(chest) {
@@ -1561,17 +1554,13 @@ export default class Game {
 		}
 	}
 
-	/**
-	 * 
-	 */
+
 	makePlayerAttack(mob) {
 		this.createAttackLink(this.player, mob);
 		connection.sendAttack(mob);
 	}
 
-	/**
-	 *
-	 */
+
 	makeNpcTalk(npc) {
 		var msg;
 	
@@ -1946,7 +1935,7 @@ export default class Game {
 		var attacker = character,
 			target = character.target;
 		
-		if(attacker && target && target instanceof Player) {
+		if(attacker && target && target instanceof PlayerGeneral) {
 			if(!target.isMoving() && attacker.getDistanceToEntity(target) === 0) {
 				var pos;
 				
@@ -2027,7 +2016,7 @@ export default class Game {
 						connection.sendHit(character.target);
 					}
 					
-					if(character instanceof Player && this.camera.isVisible(character)) {
+					if(character instanceof PlayerGeneral && this.camera.isVisible(character)) {
 						this.audioManager.playSound("hit"+Math.floor(Math.random()*2+1));
 					}
 					
@@ -2036,7 +2025,7 @@ export default class Game {
 					}
 				}
 			} else {
-				if(character.hasTarget() && character.isDiagonallyAdjacent(character.target) && character.target instanceof Player && !character.target.isMoving()) {
+				if(character.hasTarget() && character.isDiagonallyAdjacent(character.target) && character.target instanceof PlayerGeneral && !character.target.isMoving()) {
 					character.follow(character.target);
 				}
 			}
@@ -2431,6 +2420,10 @@ export default class Game {
 	private started: boolean
 	private hasNeverStarted: boolean
 	private cursorVisible: boolean
+	public population: {
+		totalPlayers: number,
+		worldPlayers: number,
+	}
 
 	private updater: Updater
 	public renderer: Renderer

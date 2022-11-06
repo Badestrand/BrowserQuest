@@ -4,7 +4,7 @@ import * as Items from './items'
 import * as NPCs from './npcs'
 import Chest from './chest'
 import Mob from './mob'
-import Player from './player'
+import PlayerGeneral from './player-general'
 import * as Types from '../../shared/gametypes'
 import {Entities} from '../../shared/constants'
 import {AllMobVariants} from '../../shared/content'
@@ -31,7 +31,7 @@ EntityFactory.createEntity = function(kind, id, name) {
 EntityFactory.builders = [];
 
 EntityFactory.builders[Entities.WARRIOR] = function(id, name) {
-    return new Player(id, name, Entities.WARRIOR);
+    return new PlayerGeneral(id, name, Entities.WARRIOR);
 };
 
 EntityFactory.builders[Entities.RAT] = function(id) {

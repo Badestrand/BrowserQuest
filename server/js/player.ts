@@ -236,7 +236,7 @@ export default class Player extends Character {
 								this.broadcast(new Messages2.EquipItem(this, this.armor.variant.kind)) // return to normal after 15 sec
 								this.firepotionTimeout = null
 							}, 15000)
-							this.send(new Messages2.MaxHitpoints(this.maxHitpoints))
+							this.send(new Messages2.CurHitpoints(this.hitpoints, false))
 						}
 						else if(Types.isHealingItem(kind)) {
 							var amount;
@@ -316,12 +316,12 @@ export default class Player extends Character {
 				}
 
 				// send updates
-				if (this.maxHitpoints !== before.maxHitpoints) {
-					this.send(new Messages2.MaxHitpoints(this.maxHitpoints))
-				}
-				if (this.maxMana !== before.maxMana) {
-					this.send(new Messages2.MaxMana(this.maxMana))
-				}
+				// if (this.maxHitpoints !== before.maxHitpoints) {
+				// 	this.send(new Messages2.MaxHitpoints(this.maxHitpoints))
+				// }
+				// if (this.maxMana !== before.maxMana) {
+				// 	this.send(new Messages2.MaxMana(this.maxMana))
+				// }
 				if (this.hitpoints !== before.hitpoints) {
 					this.send(new Messages2.CurHitpoints(this.hitpoints, false))
 				}

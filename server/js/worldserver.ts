@@ -45,7 +45,6 @@ export default class World {
 		this.outgoingQueues = {};
 		
 		this.itemCount = 0;
-		this.playerCount = 0;
 		
 		this.zoneGroupsReady = false;
 
@@ -82,15 +81,6 @@ export default class World {
 
 	addPlayer(player) {
 		log.info(player.name + " has joined world "+ this.id)
-
-		if(!player.hasEnteredGame) {
-			this.incrementPlayerCount();
-		}
-
-		// Number of players in this world
-		// and in the overall server world
-		//self.pushToPlayer(player, new Messages.Population(self.playerCount, self.server.connectionsCount()));
-		this.updatePopulation(undefined);
 
 		this.pushRelevantEntityListTo(player);
 
@@ -135,7 +125,7 @@ export default class World {
 		player.onExit(() => {
 			log.info(player.name + " has left the game.")
 			this.removePlayer(player)
-			this.decrementPlayerCount()
+			this.updatePopulation()
 			
 			if(this.removed_callback) {
 				this.removed_callback()
@@ -149,6 +139,9 @@ export default class World {
 		this.addEntity(player)
 		this.players[player.id] = player
 		this.outgoingQueues[player.id] = []
+
+		// Number of players in this world and in the overall server world
+		this.updatePopulation();
 	}
 
 	
@@ -498,17 +491,7 @@ export default class World {
 			log.error("Unknown entity : " + id);
 		}
 	}
-	
-	getPlayerCount() {
-		var count = 0;
-		for(var p in this.players) {
-			if(this.players.hasOwnProperty(p)) {
-				count += 1;
-			}
-		}
-		return count;
-	}
-	
+
 	broadcastAttacker(character) {
 		if(character) {
 			const message = new Messages.Attack(character.id, character.target)
@@ -620,19 +603,6 @@ export default class World {
 		this.handleEntityGroupMembership(player);
 	}
 	
-	setPlayerCount(count) {
-		this.playerCount = count;
-	}
-	
-	incrementPlayerCount() {
-		this.setPlayerCount(this.playerCount + 1);
-	}
-	
-	decrementPlayerCount() {
-		if(this.playerCount > 0) {
-			this.setPlayerCount(this.playerCount - 1);
-		}
-	}
 	
 	getDroppedItem(mob) {
 		var v = Utils.random(100),
@@ -843,12 +813,17 @@ export default class World {
 			}
 		});
 	}
-	
-	updatePopulation(totalPlayers) {
-		totalPlayers = totalPlayers ? totalPlayers : this.server.connectionsCount();
-		
-		log.info("Updating population: " + this.playerCount + " " + totalPlayers)
-		this.pushBroadcast(new Messages.Population(this.playerCount, totalPlayers), undefined);
+
+
+	getPlayerCount(): number {
+		return Object.values(this.players).length
+	}
+
+
+	updatePopulation() {
+		const worldPlayers = this.getPlayerCount()
+		const totalPlayers = this.server.connectionsCount();
+		this.pushBroadcast(new Messages.Population(worldPlayers, totalPlayers), undefined);
 	}
 
 
@@ -870,7 +845,6 @@ export default class World {
 	public groups: any
 	public outgoingQueues: any
 	public itemCount: any
-	public playerCount: any
 	public zoneGroupsReady: any
 	public removed_callback: any
 	public added_callback: any

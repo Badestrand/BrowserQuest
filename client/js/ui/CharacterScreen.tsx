@@ -5,6 +5,7 @@ import * as EventEmitter from 'eventemitter3'
 import {useWatchEvents} from './utils'
 import Game from '../game'
 import Player from '../player'
+import {MAX_LEVEL} from '../../../shared/constants'
 
 
 
@@ -29,7 +30,7 @@ export default function CharacterScreen({game, player, onClose}: {game: Game, pl
 			<div className="overview">
 				<p className="level-class">Level {player.getLevel()} {player.getClassName()}</p>
 				<p className="name">{player.getName()}</p>
-				{player.getLevel() < Player.getMaxLevel() && (
+				{player.getLevel() < MAX_LEVEL && (
 				<>
 					<div className="experience-bar">
 						<div style={{width: player.getExperienceProgressForThisLevel()*100+'%'}}/>

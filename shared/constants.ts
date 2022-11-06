@@ -87,6 +87,8 @@ const LEVEL_REQUIREMENTS = [
 
 const ATTR_POINTS_PER_LEVEL = 5
 
+const MAX_LEVEL = 99
+
 
 
 const INITIAL_ARMOR_KIND = Entities.CLOTHARMOR
@@ -104,7 +106,7 @@ const Messages = {
 	HIT: 'HIT',
 	HURT: 'HURT',
 	HEALTH: 'HEALTH',
-	MAX_HITPOINTS: 'MAX_HITPOINTS',
+	MANA: 'MANA',
 	CHAT: 'CHAT',
 	LOOT: 'LOOT',
 	EQUIP: 'EQUIP',
@@ -117,8 +119,6 @@ const Messages = {
 	WHO: 'WHO',
 	ZONE: 'ZONE',
 	DESTROY: 'DESTROY',
-	MANA: 'MANA',
-	MAX_MANA: 'MAX_MANA',
 	BLINK: 'BLINK',
 	OPEN: 'OPEN',
 	CHECK: 'CHECK',
@@ -134,5 +134,6 @@ export {
 	ATTR_POINTS_PER_LEVEL,
 	INITIAL_ARMOR_KIND,
 	INITIAL_WEAPON_KIND,
+	MAX_LEVEL,
 	Messages,
 }

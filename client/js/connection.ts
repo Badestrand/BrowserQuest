@@ -7,6 +7,7 @@ import {JSONRPCServerAndClient, JSONRPCClient, JSONRPCServer} from 'json-rpc-2.0
 import config from './config'
 import log from './log'
 import Player from './player'
+import PlayerGeneral from './player-general'
 import EntityFactory from './entityfactory'
 import {Messages} from '../../shared/constants'
 import * as Types from '../../shared/gametypes'
@@ -80,28 +81,17 @@ class Connection extends EventEmitter {
 		this.handlers[Messages.LIST] = this.receiveList;
 		this.handlers[Messages.DESTROY] = this.receiveDestroy;
 		this.handlers[Messages.KILL] = this.receiveKill;
-		this.handlers[Messages.MAX_HITPOINTS] = this.receiveMaxHitpoints;
-		this.handlers[Messages.MAX_MANA] = this.receiveMaxMana;
 		this.handlers[Messages.MANA] = this.receiveMana;
 		this.handlers[Messages.BLINK] = this.receiveBlink;
 	
 		this.enable();
-
-		// this._conn = io(url, {
-		// 	forceNew: true
-		// })
-		// this._conn.on('connect', (socket) => {
-		// 	log.info("Connected to server " + url)
-		// 	if(self.connected_callback) {
-		// 		self.connected_callback()
-		// 	}
-		// });
 
 		this._conn.on('message', (data) => {
 			if(data === 'timeout') {
 				this.isTimeout = true
 				return
 			}
+			console.log('Received:', JSON.stringify(data))
 			this.receiveMessage(data)
 		})
 
@@ -269,12 +259,12 @@ class Connection extends EventEmitter {
 			}
 
 			var character = EntityFactory.createEntity(kind, id, name);
-		
-			if(character instanceof Player) {
+
+			if(character instanceof PlayerGeneral) {
 				character.weaponName = Types.getKindAsString(weapon);
 				character.armorName = Types.getKindAsString(armor);
 			}
-		
+
 			if(this.spawn_character_callback) {
 				this.spawn_character_callback(character, x, y, orientation, target);
 			}
@@ -399,17 +389,17 @@ class Connection extends EventEmitter {
 	}
 
 
-	receiveMaxHitpoints(data) {
-		if(this.max_hitpoints_callback) {
-			this.max_hitpoints_callback(data[1])
-		}
-	}
+	// receiveMaxHitpoints(data) {
+	// 	if(this.max_hitpoints_callback) {
+	// 		this.max_hitpoints_callback(data[1])
+	// 	}
+	// }
 
-	receiveMaxMana(data) {
-		if(this.max_mana_callback) {
-			this.max_mana_callback(data[1])
-		}
-	}
+	// receiveMaxMana(data) {
+	// 	if(this.max_mana_callback) {
+	// 		this.max_mana_callback(data[1])
+	// 	}
+	// }
 
 	receiveMana(data) {
 		if(this.mana_callback) {
@@ -517,14 +507,6 @@ class Connection extends EventEmitter {
 
 	onEntityDestroy(callback) {
 		this.destroy_callback = callback;
-	}
-
-	onPlayerChangeMaxHitpoints(callback) {
-		this.max_hitpoints_callback = callback;
-	}
-
-	onPlayerChangeMaxMana(callback) {
-		this.max_mana_callback = callback;
 	}
 
 	onPlayerChangeCurMana(callback) {
@@ -648,8 +630,6 @@ class Connection extends EventEmitter {
 	private dmg_callback: any
 	private kill_callback: any
 	private list_callback: any
-	private max_hitpoints_callback: any
-	private max_mana_callback: any
 	private mana_callback: any
 	private blink_callback: any
 	private destroy_callback: any
