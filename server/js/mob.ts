@@ -5,16 +5,19 @@ import * as Utils from './utils'
 import * as Messages from './message'
 import ChestArea from './chestarea'
 import Character from './Character'
+import Player from './Player'
 import MobArea from './mobarea'
 import * as Types from '../../shared/gametypes'
+import WorldServer from './WorldServer'
 
 
 
 
 export default class Mob extends Character {
-	constructor(id: any, kind: number, x: number, y: number) {
+	constructor(world: WorldServer, id: any, kind: number, x: number, y: number) {
 		super(id, "mob", kind, x, y)
 		this.variant = Types.getMobVariantByKind(kind)
+		this.world = world
 		
 		this.updateHitpoints()
 		this.spawningX = x
@@ -23,6 +26,7 @@ export default class Mob extends Character {
 		this.respawnTimeout = null
 		this.returnTimeout = null
 		this.isDead = false
+		this.attackTarget = null
 	}
 
 
@@ -37,8 +41,17 @@ export default class Mob extends Character {
 	}
 
 
-	receiveDamage(points, playerId) {
+	receiveDamage(player: Player, points: number) {
 		this.hitpoints -= points;
+
+		if (this.attackTarget === null) {
+			this.attack(player)
+		}
+	}
+
+
+	attack(player: Player) {
+		this.attackTarget = player
 	}
 
 
@@ -176,6 +189,210 @@ export default class Mob extends Character {
 	}
 
 
+	getWeaponLevel(): number {
+		return this.variant.weapon
+	}
+
+
+	tick(deltaTime: number) {
+		super.tick(deltaTime)
+
+		// TODO: 
+		//   have currentAction (i.e. current animation) and currentPlan (e.g. attacking player xy) ?
+
+		if (this.attackTarget) {
+			if (this.isAdjacentNonDiagonal(this.attackTarget)) {
+				if (!this.isOnAttackCooldown) {
+					console.log('ok adjacent', this.id, this.x+'/'+this.y, 'target:', this.attackTarget.id, this.attackTarget.x+'/'+this.attackTarget.y)
+					this.world.onMobHitsPlayer(this, this.attackTarget)
+					this.isOnAttackCooldown = true
+					setTimeout(() => {
+						this.isOnAttackCooldown = false
+					}, this.variant.attackCooldown)
+				}
+			}
+		}
+
+		// If mob has finished moving to a different tile in order to avoid stacking, attack again from the new position.
+		/*if(this.previousTarget && !this.isMoving()) {
+			const t = this.previousTarget
+			if(!t.isDead) {
+				this.previousTarget = null
+				this.createAttackLink(this, t)
+				this.removeTarget()
+				this.engage(t)
+				return
+			}
+		}
+
+		if(this.isAttacking() && !this.previousTarget) {
+			var isMoving = this.tryMovingToADifferentTile(this) // Don't let multiple mobs stack on the same tile when attacking a player.
+			
+			if(this.canAttack(time)) {
+				if(!isMoving) { // don't hit target if moving to a different tile.
+					if(this.hasTarget() && this.getOrientationTo(this.target) !== this.orientation) {
+						this.lookAtTarget()
+					}
+					
+					this.hit()
+					
+					if(this.id === this.playerId) {
+						connection.sendHit(this.target)
+					}
+					
+					if(this instanceof PlayerGeneral && this.camera.isVisible(this)) {
+						this.audioManager.playSound("hit"+Math.floor(Math.random()*2+1))
+					}
+					
+					if(this.player && this.target?.id===this.player.id && !this.player.invincible) {
+						connection.sendHurt(this)
+					}
+				}
+			} else {
+				if(this.hasTarget() && this.isDiagonallyAdjacent(this.target) && this.target instanceof PlayerGeneral && !this.target.isMoving()) {
+					this.follow(this.target)
+				}
+			}
+		}*/
+
+		// if (this.isAttacking() && 
+
+		// TODO: if attack target and too far away, then fuck it go home
+
+		// this.player.onCheckAggro(() => {
+		// 	this.forEachMob((mob) => {
+		// 		if(mob.isAggressive && !mob.isAttacking() && this.player.isNear(mob, mob.aggroRange)) {
+		// 			this.player.aggro(mob);
+		// 		}
+		// 	})
+		// })
+
+		// this.player.onAggro((mob) => {
+		// 	if(!mob.isWaitingToAttack(this.player) && !this.player.isAttackedBy(mob)) {
+		// 		this.player.log_info("Aggroed by " + mob.id + " at ("+this.player.gridX+", "+this.player.gridY+")");
+		// 		connection.sendAggro(mob);
+		// 		mob.waitToAttack(this.player);
+		// 	}
+		// })
+	}
+
+
+	/*private isMobOnSameTile(mob, x=undefined, y=undefined) {
+		var X = x ?? mob.gridX,
+			Y = y ?? mob.gridY,
+			list = this.entityGrid[Y][X],
+			result = false;
+		
+		_.each(list, (entity) => {
+			if(entity instanceof Mob && entity.id !== mob.id) {
+				result = true;
+			}
+		});
+		return result;
+	}
+	
+	private getFreeAdjacentNonDiagonalPosition(entity) {
+		var result = null;
+		
+		entity.forEachAdjacentNonDiagonalPosition((x, y, orientation) => {
+			if(!result && !this.map.isColliding(x, y) && !this.isMobAt(x, y)) {
+				result = {x: x, y: y, o: orientation};
+			}
+		});
+		return result;
+	}
+	
+	private tryMovingToADifferentTile(character) {
+		var attacker = character,
+			target = character.target;
+		
+		if(attacker && target && target instanceof PlayerGeneral) {
+			if(!target.isMoving() && attacker.getDistanceToEntity(target) === 0) {
+				var pos;
+				
+				switch(target.orientation) {
+					case Orientations.UP:
+						pos = {
+							x: target.gridX,
+							y: target.gridY - 1,
+							o: target.orientation
+						}
+						break;
+					case Orientations.DOWN:
+						pos = {
+							x: target.gridX,
+							y: target.gridY + 1,
+							o: target.orientation
+						}
+						break;
+					case Orientations.LEFT:
+						pos = {
+							x: target.gridX - 1,
+							y: target.gridY,
+							o: target.orientation
+						}
+						break;
+					case Orientations.RIGHT:
+						pos = {
+							x: target.gridX + 1,
+							y: target.gridY,
+							o: target.orientation
+						}
+						break;
+				}
+				if(pos) {
+					attacker.previousTarget = target;
+					attacker.disengage();
+					attacker.idle();
+					this.makeCharacterGoTo(attacker, pos.x, pos.y);
+					target.adjacentTiles[pos.o] = true;
+					return true;
+				}
+			}
+		
+			if(!target.isMoving() && attacker.isAdjacentNonDiagonal(target) && this.isMobOnSameTile(attacker)) {
+				var pos = this.getFreeAdjacentNonDiagonalPosition(target);
+		
+				// avoid stacking mobs on the same tile next to a player
+				// by making them go to adjacent tiles if they are available
+				if(pos && !target.adjacentTiles[pos.o]) {
+					if(this.player.target && attacker.id === this.player.target.id) {
+						return false; // never unstack the player's target
+					}
+					
+					attacker.previousTarget = target;
+					attacker.disengage();
+					attacker.idle();
+					this.makeCharacterGoTo(attacker, pos.x, pos.y);
+					target.adjacentTiles[pos.o] = true;
+					
+					return true;
+				}
+			}
+		}
+		return false;
+	}*/
+
+
+	isAttacking(): boolean {
+		return this.attackTarget !== null
+	}
+
+
+	checkAggro(character: Player) {
+		if (this.attackTarget!==null || !this.variant.behaviour.isAggressive) {
+			return
+		}
+		const distance = this.getDistanceToEntity(character)
+		if (distance <= this.variant.behaviour.aggroRange) {
+			this.attackTarget = character
+			console.log('aggro!')
+		}
+	}
+
+
+
+
 	private variant: MobVariantInfo
 	public spawningX: number
 	public spawningY: number
@@ -183,7 +400,11 @@ export default class Mob extends Character {
 	public respawnTimeout: any
 	public returnTimeout: any
 	public isDead: boolean
+	private previousTarget: any
 	public area: MobArea
 	public respawn_callback: any
 	public move_callback: any
+
+	private attackTarget: Player
+	protected world: WorldServer
 }

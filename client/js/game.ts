@@ -221,21 +221,21 @@ export default class Game {
 			}
 		});
 
-		this.player.onCheckAggro(() => {
-			this.forEachMob((mob) => {
-				if(mob.isAggressive && !mob.isAttacking() && this.player.isNear(mob, mob.aggroRange)) {
-					this.player.aggro(mob);
-				}
-			});
-		});
+		// this.player.onCheckAggro(() => {
+		// 	this.forEachMob((mob) => {
+		// 		if(mob.isAggressive && !mob.isAttacking() && this.player.isNear(mob, mob.aggroRange)) {
+		// 			this.player.aggro(mob);
+		// 		}
+		// 	});
+		// });
 
-		this.player.onAggro((mob) => {
-			if(!mob.isWaitingToAttack(this.player) && !this.player.isAttackedBy(mob)) {
-				this.player.log_info("Aggroed by " + mob.id + " at ("+this.player.gridX+", "+this.player.gridY+")");
-				connection.sendAggro(mob);
-				mob.waitToAttack(this.player);
-			}
-		});
+		// this.player.onAggro((mob) => {
+		// 	if(!mob.isWaitingToAttack(this.player) && !this.player.isAttackedBy(mob)) {
+		// 		this.player.log_info("Aggroed by " + mob.id + " at ("+this.player.gridX+", "+this.player.gridY+")");
+		// 		connection.sendAggro(mob);
+		// 		mob.waitToAttack(this.player);
+		// 	}
+		// });
 
 		this.player.onBeforeStep(() => {
 			var blockingEntity = this.getEntityAt(this.player.nextGridX, this.player.nextGridY);
@@ -254,13 +254,13 @@ export default class Game {
 				this.enqueueZoningFrom(this.player.gridX, this.player.gridY);
 			}
 		
-			this.player.forEachAttacker((attacker) => {
-				if(attacker.isAdjacent(attacker.target)) {
-					attacker.lookAtTarget();
-				} else {
-					attacker.follow(this.player);
-				}
-			});
+			// this.player.forEachAttacker((attacker) => {
+			// 	if(attacker.isAdjacent(attacker.target)) {
+			// 		attacker.lookAtTarget();
+			// 	} else {
+			// 		attacker.follow(this.player);
+			// 	}
+			// });
 		
 			if((this.player.gridX <= 85 && this.player.gridY <= 179 && this.player.gridY > 178) || (this.player.gridX <= 85 && this.player.gridY <= 266 && this.player.gridY > 265)) {
 				this.tryUnlockingAchievement("INTO_THE_WILD");
@@ -362,13 +362,13 @@ export default class Game {
 					}
 				}
 				
-				if(_.size(this.player.attackers) > 0) {
-					setTimeout(() => { this.tryUnlockingAchievement("COWARD"); }, 500);
-				}
-				this.player.forEachAttacker((attacker) => {
-					attacker.disengage();
-					attacker.idle();
-				});
+				// if(_.size(this.player.attackers) > 0) {
+				// 	setTimeout(() => { this.tryUnlockingAchievement("COWARD"); }, 500);
+				// }
+				// this.player.forEachAttacker((attacker) => {
+				// 	attacker.disengage();
+				// 	attacker.idle();
+				// });
 			
 				this.updatePlateauMode();
 				
@@ -395,11 +395,11 @@ export default class Game {
 				this.audioManager.playSound("chest");
 			}
 			
-			this.player.forEachAttacker((attacker) => {
-				if(!attacker.isAdjacentNonDiagonal(this.player)) {
-					attacker.follow(this.player);
-				}
-			});
+			// this.player.forEachAttacker((attacker) => {
+			// 	if(!attacker.isAdjacentNonDiagonal(this.player)) {
+			// 		attacker.follow(this.player);
+			// 	}
+			// });
 		
 			this.unregisterEntityPosition(this.player);
 			this.registerEntityPosition(this.player);
@@ -433,10 +433,10 @@ export default class Game {
 				}, 1000);
 			});
 		
-			this.player.forEachAttacker((attacker) => {
-				attacker.disengage();
-				attacker.idle();
-			});
+			// this.player.forEachAttacker((attacker) => {
+			// 	attacker.disengage();
+			// 	attacker.idle();
+			// });
 		
 			this.audioManager.fadeOutCurrentMusic();
 
@@ -515,13 +515,13 @@ export default class Game {
 								if(!entity.isDying) {
 									this.registerEntityDualPosition(entity);
 
-									entity.forEachAttacker((attacker) => {
-										if(attacker.isAdjacent(attacker.target)) {
-											attacker.lookAtTarget();
-										} else {
-											attacker.follow(entity);
-										}
-									});
+									// entity.forEachAttacker((attacker) => {
+									// 	if(attacker.isAdjacent(attacker.target)) {
+									// 		attacker.lookAtTarget();
+									// 	} else {
+									// 		attacker.follow(entity);
+									// 	}
+									// });
 								}
 							});
 
@@ -541,11 +541,11 @@ export default class Game {
 										}
 									}
 								
-									entity.forEachAttacker((attacker) => {
-										if(!attacker.isAdjacentNonDiagonal(entity) && attacker.id !== this.playerId) {
-											attacker.follow(entity);
-										}
-									});
+									// entity.forEachAttacker((attacker) => {
+									// 	if(!attacker.isAdjacentNonDiagonal(entity) && attacker.id !== this.playerId) {
+									// 		attacker.follow(entity);
+									// 	}
+									// });
 						
 									this.unregisterEntityPosition(entity);
 									this.registerEntityPosition(entity);
@@ -553,22 +553,25 @@ export default class Game {
 							});
 
 							entity.onRequestPath((x, y) => {
-								var ignored = [entity], // Always ignore self
-									ignoreTarget = (target) => {
-										ignored.push(target);
+								const ignored = [entity] // Always ignore self
 
-										// also ignore other attackers of the target entity
-										target.forEachAttacker((attacker) => {
-											ignored.push(attacker);
-										});
-									};
+								// const ignoreTarget = (target) => {
+								// 	ignored.push(target)
+								// 	// also ignore other attackers of the target entity
+								// 	target.forEachAttacker((attacker) => {
+								// 		ignored.push(attacker);
+								// 	})
+								// }
 								
 								if(entity.hasTarget()) {
-									ignoreTarget(entity.target);
-								} else if(entity.previousTarget) {
+									// ignoreTarget(entity.target);
+									ignored.push(entity.target)
+								}
+								else if(entity.previousTarget) {
 									// If repositioning before attacking again, ignore previous target
 									// See: tryMovingToADifferentTile()
-									ignoreTarget(entity.previousTarget);
+									// ignoreTarget(entity.previousTarget);
+									ignored.push(entity.previousTarget)
 								}
 								
 								return this.findPath(entity, x, y, ignored);
@@ -592,9 +595,9 @@ export default class Game {
 									this.removeFromRenderingGrid(entity, entity.gridX, entity.gridY);
 								});
 
-								entity.forEachAttacker((attacker) => {
-									attacker.disengage();
-								});
+								// entity.forEachAttacker((attacker) => {
+								// 	attacker.disengage();
+								// });
 								
 								if(this.player.target && this.player.target.id === entity.id) {
 									this.player.disengage();
@@ -650,11 +653,11 @@ export default class Game {
 					this.removeItem(entity);
 				}
 				else if(entity instanceof Character) {
-					entity.forEachAttacker((attacker) => {
-						if(attacker.canReachTarget()) {
-							attacker.hit();
-						}
-					});
+					// entity.forEachAttacker((attacker) => {
+					// 	if(attacker.canReachTarget()) {
+					// 		attacker.hit();
+					// 	}
+					// });
 					entity.die();
 				}
 				else if(entity instanceof Chest) {
@@ -679,9 +682,9 @@ export default class Game {
 				entity = this.getEntityById(id);
 		
 				if(entity) {
-					if(this.player.isAttackedBy(entity)) {
-						this.tryUnlockingAchievement("COWARD");
-					}
+					// if(this.player.isAttackedBy(entity)) {
+					// 	this.tryUnlockingAchievement("COWARD");
+					// }
 					entity.disengage();
 					entity.idle();
 					this.makeCharacterGoTo(entity, x, y);
@@ -834,11 +837,11 @@ export default class Game {
 					this.makeCharacterTeleportTo(entity, x, y);
 					entity.setOrientation(currentOrientation);
 				
-					entity.forEachAttacker((attacker) => {
-						attacker.disengage();
-						attacker.idle();
-						attacker.stop();
-					});
+					// entity.forEachAttacker((attacker) => {
+					// 	attacker.disengage();
+					// 	attacker.idle();
+					// 	attacker.stop();
+					// });
 				}
 			}
 		});
@@ -1472,29 +1475,30 @@ export default class Game {
 			attacker.removeTarget();
 		}
 		attacker.engage(target);
-		
-		if(attacker.id !== this.playerId) {
-			target.addAttacker(attacker);
-		}
+
+		// if(attacker.id !== this.playerId) {
+		// 	target.addAttacker(attacker);
+		// }
 	}
+
 
 	/**
 	 * Converts the current mouse position on the screen to world grid coordinates.
 	 * @returns {Object} An object containing x and y properties.
 	 */
 	getMouseGridPosition() {
-		var mx = this.mouse.x,
-			my = this.mouse.y,
-			c = this.renderer.camera,
-			s = this.renderer.scale,
-			ts = this.renderer.tilesize,
-			offsetX = mx % (ts * s),
-			offsetY = my % (ts * s),
-			x = ((mx - offsetX) / (ts * s)) + c.gridX,
-			y = ((my - offsetY) / (ts * s)) + c.gridY;
-	
-			return { x: x, y: y };
+		const mx = this.mouse.x
+		const my = this.mouse.y
+		const c = this.renderer.camera
+		const s = this.renderer.scale
+		const ts = this.renderer.tilesize
+		const offsetX = mx % (ts * s)
+		const offsetY = my % (ts * s)
+		const x = ((mx - offsetX) / (ts * s)) + c.gridX
+		const y = ((my - offsetY) / (ts * s)) + c.gridY
+		return {x, y}
 	}
+
 
 	/**
 	 * Moves a character to a given location on the world grid.
@@ -1502,15 +1506,13 @@ export default class Game {
 	 * @param {Number} x The x coordinate of the target location.
 	 * @param {Number} y The y coordinate of the target location.
 	 */
-	makeCharacterGoTo(character, x, y) {
+	makeCharacterGoTo(character: Character, x: number, y: number) {
 		if(!this.map.isOutOfBounds(x, y)) {
 			character.go(x, y);
 		}
 	}
 
-	/**
-	 *
-	 */
+
 	makeCharacterTeleportTo(character, x, y) {
 		if(!this.map.isOutOfBounds(x, y)) {
 			this.unregisterEntityPosition(character);
@@ -1555,10 +1557,10 @@ export default class Game {
 	}
 
 
-	makePlayerAttack(mob) {
-		this.createAttackLink(this.player, mob);
-		connection.sendAttack(mob);
-	}
+	// makePlayerAttack(mob) {
+	// 	this.createAttackLink(this.player, mob);
+	// 	connection.sendAttack(mob);
+	// }
 
 
 	makeNpcTalk(npc) {
@@ -1865,27 +1867,21 @@ export default class Game {
 	 * Processes game logic when the user triggers a click/touch event during the game.
 	 */
 	click() {
-		var pos = this.getMouseGridPosition(),
-			entity;
+		const pos = this.getMouseGridPosition()
+		let entity
 		
-		if(pos.x === this.previousClickPosition.x
-		&& pos.y === this.previousClickPosition.y) {
-			return;
+		if(pos.x === this.previousClickPosition.x && pos.y === this.previousClickPosition.y) {
+			return
 		} else {
-			this.previousClickPosition = pos;
+			this.previousClickPosition = pos
 		}
 		
-		if(this.started
-		&& this.player
-		&& !this.isZoning()
-		&& !this.isZoningTile(this.player.nextGridX, this.player.nextGridY)
-		&& !this.player.isDead
-		&& !this.hoveringCollidingTile
-		&& !this.hoveringPlateauTile) {
+		if(this.started && this.player && !this.isZoning() && !this.isZoningTile(this.player.nextGridX, this.player.nextGridY) && !this.player.isDead && !this.hoveringCollidingTile && !this.hoveringPlateauTile) {
 			entity = this.getEntityAt(pos.x, pos.y);
 		
 			if(entity instanceof Mob) {
-				this.makePlayerAttack(entity);
+				// this.makePlayerAttack(entity);
+				this.player.engage(entity)
 			}
 			else if(entity instanceof Item) {
 				this.makePlayerGoToItem(entity);
@@ -1905,127 +1901,35 @@ export default class Game {
 			}
 		}
 	}
-	
-	isMobOnSameTile(mob, x=undefined, y=undefined) {
-		var X = x ?? mob.gridX,
-			Y = y ?? mob.gridY,
-			list = this.entityGrid[Y][X],
-			result = false;
-		
-		_.each(list, (entity) => {
-			if(entity instanceof Mob && entity.id !== mob.id) {
-				result = true;
-			}
-		});
-		return result;
-	}
-	
-	getFreeAdjacentNonDiagonalPosition(entity) {
-		var result = null;
-		
-		entity.forEachAdjacentNonDiagonalPosition((x, y, orientation) => {
-			if(!result && !this.map.isColliding(x, y) && !this.isMobAt(x, y)) {
-				result = {x: x, y: y, o: orientation};
-			}
-		});
-		return result;
-	}
-	
-	tryMovingToADifferentTile(character) {
-		var attacker = character,
-			target = character.target;
-		
-		if(attacker && target && target instanceof PlayerGeneral) {
-			if(!target.isMoving() && attacker.getDistanceToEntity(target) === 0) {
-				var pos;
-				
-				switch(target.orientation) {
-					case Orientations.UP:
-						pos = {x: target.gridX, y: target.gridY - 1, o: target.orientation}; break;
-					case Orientations.DOWN:
-						pos = {x: target.gridX, y: target.gridY + 1, o: target.orientation}; break;
-					case Orientations.LEFT:
-						pos = {x: target.gridX - 1, y: target.gridY, o: target.orientation}; break;
-					case Orientations.RIGHT:
-						pos = {x: target.gridX + 1, y: target.gridY, o: target.orientation}; break;
-				}
-				
-				if(pos) {
-					attacker.previousTarget = target;
-					attacker.disengage();
-					attacker.idle();
-					this.makeCharacterGoTo(attacker, pos.x, pos.y);
-					target.adjacentTiles[pos.o] = true;
-					
-					return true;
-				}
-			}
-		
-			if(!target.isMoving() && attacker.isAdjacentNonDiagonal(target) && this.isMobOnSameTile(attacker)) {
-				var pos = this.getFreeAdjacentNonDiagonalPosition(target);
-		
-				// avoid stacking mobs on the same tile next to a player
-				// by making them go to adjacent tiles if they are available
-				if(pos && !target.adjacentTiles[pos.o]) {
-					if(this.player.target && attacker.id === this.player.target.id) {
-						return false; // never unstack the player's target
-					}
-					
-					attacker.previousTarget = target;
-					attacker.disengage();
-					attacker.idle();
-					this.makeCharacterGoTo(attacker, pos.x, pos.y);
-					target.adjacentTiles[pos.o] = true;
-					
-					return true;
-				}
-			}
-		}
-		return false;
-	}
 
-	/**
-	 * 
-	 */
+
+
+
 	onCharacterUpdate(character) {
-		var time = this.currentTime
-		
-		// If mob has finished moving to a different tile in order to avoid stacking, attack again from the new position.
-		if(character.previousTarget && !character.isMoving() && character instanceof Mob) {
-			var t = character.previousTarget;
-			
-			if(this.getEntityById(t.id)) { // does it still exist?
-				character.previousTarget = null;
-				this.createAttackLink(character, t);
-				return;
-			}
-		}
-	
+		const time = this.currentTime
+
 		if(character.isAttacking() && !character.previousTarget) {
-			var isMoving = this.tryMovingToADifferentTile(character); // Don't let multiple mobs stack on the same tile when attacking a player.
-			
 			if(character.canAttack(time)) {
-				if(!isMoving) { // don't hit target if moving to a different tile.
-					if(character.hasTarget() && character.getOrientationTo(character.target) !== character.orientation) {
-						character.lookAtTarget();
-					}
-					
-					character.hit();
-					
-					if(character.id === this.playerId) {
-						connection.sendHit(character.target);
-					}
-					
-					if(character instanceof PlayerGeneral && this.camera.isVisible(character)) {
-						this.audioManager.playSound("hit"+Math.floor(Math.random()*2+1));
-					}
-					
-					if(this.player && character.target?.id===this.player.id && !this.player.invincible) {
-						connection.sendHurt(character)
-					}
+				if(character.hasTarget() && character.getOrientationTo(character.target) !== character.orientation) {
+					character.lookAtTarget();
 				}
-			} else {
-				if(character.hasTarget() && character.isDiagonallyAdjacent(character.target) && character.target instanceof PlayerGeneral && !character.target.isMoving()) {
+				
+				character.hit();
+				
+				if(character.id === this.playerId) {
+					connection.sendHit(character.target)
+				}
+				
+				if(character instanceof Player && this.camera.isVisible(character)) {
+					this.audioManager.playSound("hit"+Math.floor(Math.random()*2+1));
+				}
+				
+				if(character.hasTarget() && character.target.id === this.playerId && this.player && !this.player.invincible) {
+					connection.sendHurt(character)
+				}
+			}
+			else {
+				if(character.hasTarget() && character.isDiagonallyAdjacent(character.target) && character.target instanceof Player && !character.target.isMoving()) {
 					character.follow(character.target);
 				}
 			}
@@ -2033,6 +1937,8 @@ export default class Game {
 	}
 
 
+
+	// ZONING
 	isZoningTile(x, y) {
 		var c = this.camera;
 	
@@ -2044,6 +1950,7 @@ export default class Game {
 		}
 		return false;
 	}
+
 
 	getZoningOrientation(x, y) {
 		var orientation = null,
@@ -2067,6 +1974,7 @@ export default class Game {
 	
 		return orientation;
 	}
+
 
 	startZoningFrom(x0, y0) {
 		this.zoningOrientation = this.getZoningOrientation(x0, y0);
@@ -2101,7 +2009,8 @@ export default class Game {
 		this.bubbleManager.clean();
 		connection.sendZone();
 	}
-	
+
+
 	enqueueZoningFrom(x, y) {
 		this.zoningQueue.push({x: x, y: y});
 		
@@ -2109,6 +2018,7 @@ export default class Game {
 			this.startZoningFrom(x, y);
 		}
 	}
+
 
 	endZoning() {
 		this.currentZoning = null;
@@ -2121,15 +2031,18 @@ export default class Game {
 		}
 	}
 
+
 	isZoning() {
 		return !_.isNull(this.currentZoning);
 	}
+
 
 	resetZone() {
 		this.bubbleManager.clean();
 		this.initAnimatedTiles();
 		this.renderer.renderStaticCanvases();
 	}
+	// ZONING END
 
 
 
@@ -2143,6 +2056,8 @@ export default class Game {
 		connection.sendChat(message);
 	}
 
+
+	// BUBBLES
 	createBubble(id, message) {
 		this.bubbleManager.create(id, message, this.currentTime);
 	}
@@ -2183,6 +2098,7 @@ export default class Game {
 			bubble.element.css('top', y + 'px');
 		}
 	}
+	// BUBBLES END
 
 
 

@@ -97,14 +97,29 @@ function main(config) {
 	});
 
 
-	_.each(_.range(config.nb_worlds), function(i) {
-		var world = new WorldServer('world'+ (i+1), config.nb_players_per_world, server);
-		world.run(config.map_filepath);
-		worlds.push(world);
-	});
+	for (let i=0; i<config.nb_worlds; ++i) {
+		const world = new WorldServer('world'+ (i+1), config.nb_players_per_world, server)
+		world.run(config.map_filepath)
+		worlds.push(world)
+	}
 
 
-	server.onRequestStatus(() => JSON.stringify(getWorldDistribution(worlds)))
+	server.onRequestStatus(() => {
+		JSON.stringify(getWorldDistribution(worlds))
+	})
+
+
+	// main game loop
+	let time = new Date().getTime()
+	setInterval(() => {
+		const newTime = new Date().getTime()
+		const deltaTime = newTime - time
+		time = newTime
+
+		for (const world of worlds) {
+			world.tick(deltaTime / 1000)
+		}
+	}, 0)
 
 
 	process.on('uncaughtException', function (e) {

@@ -75,22 +75,22 @@ export class LootMove extends Message {
 }
 
 
-export class Attack extends Message {
-	constructor(attackerId, targetId) {
-		super()
-		this.attackerId = attackerId;
-		this.targetId = targetId;
-	}
+// export class Attack extends Message {
+// 	constructor(attackerId, targetId) {
+// 		super()
+// 		this.attackerId = attackerId;
+// 		this.targetId = targetId;
+// 	}
 
-	serialize() {
-		return [Messages.ATTACK,
-				this.attackerId,
-				this.targetId];
-	}
+// 	serialize() {
+// 		return [Messages.ATTACK,
+// 				this.attackerId,
+// 				this.targetId];
+// 	}
 
-	public attackerId: any
-	public targetId: any
-}
+// 	public attackerId: any
+// 	public targetId: any
+// }
 
 
 export class CurHitpoints extends Message {

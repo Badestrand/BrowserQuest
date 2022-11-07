@@ -37,7 +37,7 @@ export default class Character extends Entity {
 		// Combat
 		this.target = null;
 		this.unconfirmedTarget = null;
-		this.attackers = {};
+		// this.attackers = {};
 	
 		// Health
 		this.hitpoints = 0;
@@ -46,41 +46,48 @@ export default class Character extends Entity {
 		// Modes
 		this.isDead = false;
 		this.attackingMode = false;
-		this.followingMode = false;
+		this.isFollowing = false;
 	}
 
 
-	clean() {
-		this.forEachAttacker(function(attacker) {
-			attacker.disengage();
-			attacker.idle();
-		});
-	}
+	// clean() {
+	// 	this.forEachAttacker(function(attacker) {
+	// 		attacker.disengage();
+	// 		attacker.idle();
+	// 	});
+	// }
+
 
 	getCurHitpoints() {
 		return this.hitpoints
 	}
 
+
 	getMaxHitpoints() {
 		return this.maxHitpoints
 	}
+
 
 	setMaxHitpoints(hp) {
 		this.maxHitpoints = hp;
 		this.hitpoints = hp;
 	}
 
+
 	setDefaultAnimation() {
 		this.idle();
 	}
+
 
 	hasWeapon() {
 		return false;
 	}
 
+
 	hasShadow() {
 		return true;
 	}
+
 
 	animate(animation, speed, count=null, onEndCount=null) {
 		var oriented = ['atk', 'walk', 'idle'];
@@ -99,10 +106,12 @@ export default class Character extends Entity {
 		}
 	}
 
+
 	turnTo(orientation) {
 		this.orientation = orientation;
 		this.idle();
 	}
+
 
 	setOrientation(orientation) {
 		if(orientation) {
@@ -110,22 +119,26 @@ export default class Character extends Entity {
 		}
 	}
 
+
 	idle(orientation=null) {
 		this.setOrientation(orientation);
 		this.animate("idle", this.idleSpeed);
 	}
+
 
 	hit(orientation) {
 		this.setOrientation(orientation);
 		this.animate("atk", this.atkSpeed, 1);
 	}
 
+
 	walk(orientation) {
 		this.setOrientation(orientation);
 		this.animate("walk", this.walkSpeed);
 	}
 
-	moveTo_(x, y) {
+
+	private moveTo_(x, y) {
 		this.destination = { gridX: x, gridY: y };
 		this.adjacentTiles = {};
 	
@@ -139,7 +152,8 @@ export default class Character extends Entity {
 		}
 	}
 
-	requestPathfindingTo(x, y) {
+
+	private requestPathfindingTo(x, y) {
 		if(this.request_path_callback) {
 			return this.request_path_callback(x, y);
 		} else {
@@ -148,24 +162,28 @@ export default class Character extends Entity {
 		}
 	}
 
+
 	onRequestPath(callback) {
 		this.request_path_callback = callback;
 	}
+
 
 	onStartPathing(callback) {
 		this.start_pathing_callback = callback;
 	}
 
+
 	onStopPathing(callback) {
 		this.stop_pathing_callback = callback;
 	}
 
-	followPath(path) {
+
+	private followPath(path) {
 		if(path.length > 1) { // Length of 1 means the player has clicked on himself
 			this.path = path;
 			this.step = 0;
 		
-			if(this.followingMode) { // following a character
+			if(this.isFollowing) { // following a character
 				path.pop();
 			}
 		
@@ -176,11 +194,13 @@ export default class Character extends Entity {
 		}
 	}
 
-	continueTo(x, y) {
+
+	private continueTo(x, y) {
 		this.newDestination = { x: x, y: y };
 	}
 
-	updateMovement() {
+
+	private updateMovement() {
 		var p = this.path,
 			i = this.step;
 	
@@ -198,9 +218,11 @@ export default class Character extends Entity {
 		}
 	}
 
-	updatePositionOnGrid() {
+
+	private updatePositionOnGrid() {
 		this.setGridPosition(this.path[this.step][0], this.path[this.step][1]);
 	}
+
 
 	nextStep() {
 		var stop = false,
@@ -212,7 +234,7 @@ export default class Character extends Entity {
 			}
 		
 			this.updatePositionOnGrid();
-			this.checkAggro();
+			// this.checkAggro();
 		
 			if(this.interrupted) { // if Character.stop() has been called
 				stop = true;
@@ -261,127 +283,121 @@ export default class Character extends Entity {
 		}
 	}
 
+
 	onBeforeStep(callback) {
 		this.before_step_callback = callback;
 	}
+
 
 	onStep(callback) {
 		this.step_callback = callback;
 	}
 
+
 	isMoving() {
 		return !(this.path === null);
 	}
+
 
 	hasNextStep() {
 		return (this.path.length - 1 > this.step);
 	}
 
+
 	hasChangedItsPath() {
 		return !(this.newDestination === null);
 	}
 
+
 	isNear(character, distance) {
-		var dx, dy, near = false;
-	
-		dx = Math.abs(this.gridX - character.gridX);
-		dy = Math.abs(this.gridY - character.gridY);
-	
-		if(dx <= distance && dy <= distance) {
-			near = true;
-		}
-		return near;
+		const dx = Math.abs(this.gridX - character.gridX)
+		const dy = Math.abs(this.gridY - character.gridY)
+		return dx<=distance && dy<=distance
 	}
 
-	onAggro(callback) {
-		this.aggro_callback = callback;
-	}
-	
-	onCheckAggro(callback) {
-		this.checkaggro_callback = callback;
-	}
 
-	checkAggro() {
-		if(this.checkaggro_callback) {
-			this.checkaggro_callback();
-		}
-	}
+	// onAggro(callback) {
+	// 	this.aggro_callback = callback;
+	// }
+
 	
-	aggro(character) {
-		if(this.aggro_callback) {
-			this.aggro_callback(character);
-		}
-	}
+	// onCheckAggro(callback) {
+	// 	this.checkaggro_callback = callback;
+	// }
+
+
+	// checkAggro() {
+	// 	if(this.checkaggro_callback) {
+	// 		this.checkaggro_callback();
+	// 	}
+	// }
+	
+
+	// aggro(character) {
+	// 	if(this.aggro_callback) {
+	// 		this.aggro_callback(character);
+	// 	}
+	// }
+
 
 	onDeath(callback) {
 		this.death_callback = callback;
 	}
 
-	/**
-	 * Changes the character's orientation so that it is facing its target.
-	 */
+
 	lookAtTarget() {
 		if(this.target) {
 			this.turnTo(this.getOrientationTo(this.target));
 		}
 	}
 
-	/**
-	 * 
-	 */
+
 	go(x, y) {
 		if(this.isAttacking()) {
 			this.disengage();
 		}
-		else if(this.followingMode) {
-			this.followingMode = false;
+		else if(this.isFollowing) {
+			this.isFollowing = false;
 			this.target = null;
 		}
 		this.moveTo_(x, y);
 	}
 
-	/**
-	 * Makes the character follow another one.
-	 */
+
 	follow(entity) {
 		if(entity) {
-			this.followingMode = true;
+			this.isFollowing = true;
 			this.moveTo_(entity.gridX, entity.gridY);
 		}
 	}
 
-	/**
-	 * Stops a moving character.
-	 */
+
 	stop() {
 		if(this.isMoving()) {
 			this.interrupted = true;
 		}
 	}
 
-	/**
-	 * Makes the character attack another character. Same as Character.follow but with an auto-attacking behavior.
-	 * @see Character.follow
-	 */
+
 	engage(character) {
 		this.attackingMode = true;
 		this.setTarget(character);
 		this.follow(character);
 	}
 
+
 	disengage() {
 		this.attackingMode = false;
-		this.followingMode = false;
+		this.isFollowing = false;
 		this.removeTarget();
 	}
 
-	/**
-	 * Returns true if the character is currently attacking.
-	 */
+
 	isAttacking() {
 		return this.attackingMode;
 	}
 	
+
 	/**
 	 * Gets the right orientation to face a target character from the current position.
 	 * Note:
@@ -407,86 +423,62 @@ export default class Character extends Entity {
 		}
 	}
 
-	/**
-	 * Returns true if this character is currently attacked by a given character.
-	 * @param {Character} character The attacking character.
-	 * @returns {Boolean} Whether this is an attacker of this character.
-	 */
-	isAttackedBy(character) {
-		return (character.id in this.attackers);
-	}
 
-	/**
-	* Registers a character as a current attacker of this one.
-	* @param {Character} character The attacking character.
-	*/
-	addAttacker(character) {
-		if(!this.isAttackedBy(character)) {
-			this.attackers[character.id] = character;
-		} else {
-			log.error(this.id + " is already attacked by " + character.id);
-		}
-	}
+	// isAttackedBy(character: Character) {
+	// 	return (character.id in this.attackers);
+	// }
 
-	/**
-	* Unregisters a character as a current attacker of this one.
-	* @param {Character} character The attacking character.
-	*/
-	removeAttacker(character) {
-		if(this.isAttackedBy(character)) {
-			delete this.attackers[character.id];
-		} else {
-			log.error(this.id + " is not attacked by " + character.id);
-		}
-	}
 
-	/**
-	 * Loops through all the characters currently attacking this one.
-	 * @param {Function} callback Function which must accept one character argument.
-	 */
-	forEachAttacker(callback) {
-		_.each(this.attackers, function(attacker) {
-			callback(attacker);
-		});
-	}
+	// addAttacker(character: Character) {
+	// 	if(!this.isAttackedBy(character)) {
+	// 		this.attackers[character.id] = character;
+	// 	} else {
+	// 		log.error(this.id + " is already attacked by " + character.id);
+	// 	}
+	// }
 
-	/**
-	 * Sets this character's attack target. It can only have one target at any time.
-	 * @param {Character} character The target character.
-	 */
-	setTarget(character) {
-		if(this.target !== character) { // If it's not already set as the target
+
+	// removeAttacker(character: Character) {
+	// 	if(this.isAttackedBy(character)) {
+	// 		delete this.attackers[character.id];
+	// 	} else {
+	// 		log.error(this.id + " is not attacked by " + character.id);
+	// 	}
+	// }
+
+
+	// forEachAttacker(callback) {
+	// 	_.each(this.attackers, function(attacker) {
+	// 		callback(attacker);
+	// 	})
+	// }
+
+
+	setTarget(character: Character) {
+		if(character !== this.target) {
 			if(this.hasTarget()) {
-				this.removeTarget(); // Cleanly remove the previous one
+				this.removeTarget()
 			}
-			this.unconfirmedTarget = null;
-			this.target = character;
+			this.unconfirmedTarget = null
+			this.target = character
 		} else {
-			log.debug(character.id + " is already the target of " + this.id);
+			log.debug(character.id + " is already the target of " + this.id)
 		}
 	}
 
-	/**
-	 * Removes the current attack target.
-	 */
 	removeTarget() {
-		var self = this;
-	
 		if(this.target) {
-			if(this.target instanceof Character) {
-				this.target.removeAttacker(this);
-			}
-			this.target = null;
+			// if(this.target instanceof Character) {
+			// 	this.target.removeAttacker(this)
+			// }
+			this.target = null
 		}
 	}
 
-	/**
-	 * Returns true if this character has a current attack target.
-	 * @returns {Boolean} Whether this character has a target.
-	 */
-	hasTarget() {
-		return !(this.target === null);
+	hasTarget(): boolean {
+		return this.target !== null
 	}
+
 
 	/**
 	 * Marks this character as waiting to attack a target.
@@ -495,22 +487,20 @@ export default class Character extends Entity {
 	 *
 	 * @param {Character} character The target character
 	 */
-	waitToAttack(character) {
-		this.unconfirmedTarget = character;
-	}
+	// waitToAttack(character) {
+	// 	this.unconfirmedTarget = character;
+	// }
 
 	/**
 	 * Returns true if this character is currently waiting to attack the target character.
 	 * @param {Character} character The target character.
 	 * @returns {Boolean} Whether this character is waiting to attack.
 	 */
-	isWaitingToAttack(character) {
-		return (this.unconfirmedTarget === character);
-	}
+	// isWaitingToAttack(character) {
+	// 	return (this.unconfirmedTarget === character);
+	// }
 
-	/**
-	 * 
-	 */
+
 	canAttack(time) {
 		if(this.canReachTarget() && this.attackCooldown.isOver(time)) {
 			return true;
@@ -518,12 +508,14 @@ export default class Character extends Entity {
 		return false;
 	}
 	
+
 	canReachTarget() {
 		if(this.hasTarget() && this.isAdjacentNonDiagonal(this.target)) {
 			return true;
 		}
 		return false;
 	}
+
 
 	setCurHitpoints(points: number) {
 		const isHurt = points < this.hitpoints
@@ -537,6 +529,7 @@ export default class Character extends Entity {
 		this.emit('update')
 	}
 
+
 	die(isDisconnected: boolean=false) {
 		this.removeTarget();
 		this.isDead = true;
@@ -546,9 +539,11 @@ export default class Character extends Entity {
 		}
 	}
 
+
 	onHasMoved(callback) {
 		this.hasmoved_callback = callback;
 	}
+
 
 	hasMoved() {
 		this.setDirty();
@@ -557,16 +552,19 @@ export default class Character extends Entity {
 		}
 	}
 
+
 	hurt() {
 		this.stopHurting()
 		this.sprite = this.hurtSprite
 		this.hurting = setTimeout(this.stopHurting.bind(this), 75)
 	}
 
+
 	stopHurting() {
 		this.sprite = this.normalSprite;
 		clearTimeout(this.hurting);
 	}
+
 
 	setAttackRate(rate) {
 		this.attackCooldown = new Timer(rate);
@@ -579,9 +577,9 @@ export default class Character extends Entity {
 	public hurting: any
 	public hasmoved_callback: any
 	public death_callback: any
-	public aggro_callback: any
+	// public aggro_callback: any
+	// public checkaggro_callback: any
 	public step_callback: any
-	public checkaggro_callback: any
 	public before_step_callback: any
 	public request_path_callback: any
 	public start_pathing_callback: any
@@ -589,14 +587,14 @@ export default class Character extends Entity {
 	public isDead: boolean
 	public target: any
 	public unconfirmedTarget: any
-	public attackers: any
+	// public attackers: any
 	public attackingMode: any
-	public followingMode: any
+	public isFollowing: any
 	public interrupted: any
 	public step: any
-	public nextGridX: any
-	public nextGridY: any
-	public path: any
+	public nextGridX: number
+	public nextGridY: number
+	public path: Array<[number, number]>
 	public newDestination: any
 	public adjacentTiles: any
 	public destination: any

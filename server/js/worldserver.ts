@@ -26,7 +26,6 @@ export default class World {
 		this.id = id;
 		this.maxPlayers = maxPlayers;
 		this.server = websocketServer;
-		this.ups = 50;
 		
 		this.map = null;
 		
@@ -56,17 +55,6 @@ export default class World {
 				self.moveEntity(attacker, pos.x, pos.y);
 			}
 		});
-		
-		this.onRegenTick(function() {
-			self.forEachCharacter(function(character) {
-				if(!character.hasFullHealth()) {
-					character.regenHealthBy(Math.floor(character.maxHitpoints / 100));
-					if(character.type === 'player') {
-						self.pushToPlayer(character, new Messages.CurHitpoints(character.hitpoints, true))
-					}
-				}
-			})
-		})
 	}
 
 
@@ -82,28 +70,35 @@ export default class World {
 	addPlayer(player) {
 		log.info(player.name + " has joined world "+ this.id)
 
+		this.addEntity(player)
+		this.players[player.id] = player
+		this.outgoingQueues[player.id] = []
+
 		this.pushRelevantEntityListTo(player);
 
-		var move_callback = (x, y) => {
-			log.debug(player.name + " is moving to (" + x + ", " + y + ").");
+		// var move_callback = (x, y) => {
+		// 	log.debug(player.name + " is moving to (" + x + ", " + y + ").");
 			
-			player.forEachAttacker((mob) => {
-				var target = this.getEntityById(mob.target);
-				if(target) {
-					var pos = this.findPositionNextTo(mob, target);
-					if(mob.distanceToSpawningPoint(pos.x, pos.y) > 50) {
-						mob.clearTarget();
-						mob.forgetEveryone();
-						player.removeAttacker(mob);
-					} else {
-						this.moveEntity(mob, pos.x, pos.y);
-					}
-				}
-			});
-		};
+		// 	player.forEachAttacker((mob) => {
+		// 		var target = this.getEntityById(mob.target);
+		// 		if(target) {
+		// 			var pos = this.findPositionNextTo(mob, target);
+		// 			if(mob.distanceToSpawningPoint(pos.x, pos.y) > 50) {
+		// 				mob.clearTarget();
+		// 				mob.forgetEveryone();
+		// 				player.removeAttacker(mob);
+		// 			} else {
+		// 				this.moveEntity(mob, pos.x, pos.y);
+		// 			}
+		// 		}
+		// 	})
+		// }
+		// player.onMove(move_callback)
+		// player.onLootMove(move_callback)
 
-		player.onMove(move_callback)
-		player.onLootMove(move_callback)
+		player.on('hitpoints', (points: number, isRegen: boolean) => {
+			this.pushToPlayer(player, new Messages.CurHitpoints(points, isRegen))
+		})
 
 		player.onZone(() => {
 			var hasChangedGroups = this.handleEntityGroupMembership(player)
@@ -136,98 +131,114 @@ export default class World {
 			this.added_callback()
 		}
 
-		this.addEntity(player)
-		this.players[player.id] = player
-		this.outgoingQueues[player.id] = []
-
 		// Number of players in this world and in the overall server world
 		this.updatePopulation();
 	}
 
 	
-	run(mapFilePath) {
+	run(mapFilePath: string) {
 		var self = this;
 		this.map = new Map(mapFilePath);
 
-		this.map.ready(function() {
-			self.initZoneGroups();
+		this.map.ready(() => {
+			this.initZoneGroups();
 			
-			self.map.generateCollisionGrid();
+			this.map.generateCollisionGrid();
 			
 			// Populate all mob "roaming" areas
-			_.each(self.map.mobAreas, function(a) {
-				var area = new MobArea(a.id, a.nb, a.type, a.x, a.y, a.width, a.height, self);
-				area.spawnMobs();
-				area.onEmpty(self.handleEmptyMobArea.bind(self, area));
+			_.each(this.map.mobAreas, (a) => {
+				var area = new MobArea(a.id, a.nb, a.type, a.x, a.y, a.width, a.height, this);
+				area.spawnMobs(this);
+				area.onEmpty(this.handleEmptyMobArea.bind(this, area));
 				
-				self.mobAreas.push(area);
+				this.mobAreas.push(area);
 			});
 			
 			// Create all chest areas
-			_.each(self.map.chestAreas, function(a) {
-				var area = new ChestArea(a.id, a.x, a.y, a.w, a.h, a.tx, a.ty, a.i, self);
-				self.chestAreas.push(area);
-				area.onEmpty(self.handleEmptyChestArea.bind(self, area));
+			_.each(this.map.chestAreas, (a) => {
+				var area = new ChestArea(a.id, a.x, a.y, a.w, a.h, a.tx, a.ty, a.i, this);
+				this.chestAreas.push(area);
+				area.onEmpty(this.handleEmptyChestArea.bind(this, area));
 			});
 			
 			// Spawn static chests
-			_.each(self.map.staticChests, function(chest) {
-				var c = self.createChest(chest.x, chest.y, chest.i);
-				self.addStaticItem(c);
+			_.each(this.map.staticChests, (chest) => {
+				var c = this.createChest(chest.x, chest.y, chest.i);
+				this.addStaticItem(c);
 			});
 			
 			// Spawn static entities
-			self.spawnStaticEntities();
+			this.spawnStaticEntities();
 			
 			// Set maximum number of entities contained in each chest area
-			_.each(self.chestAreas, function(area) {
+			_.each(this.chestAreas, (area) => {
 				area.setNumberOfEntities(area.entities.length);
 			});
 		});
-		
-		var regenCount = this.ups * 2;
-		var updateCount = 0;
-		setInterval(function() {
-			self.processGroups();
-			self.processQueues();
-			
-			if(updateCount < regenCount) {
-				updateCount += 1;
-			} else {
-				if(self.regen_callback) {
-					self.regen_callback();
-				}
-				updateCount = 0;
-			}
-		}, 1000 / this.ups);
-		
+
 		log.info(""+this.id+" created (capacity: "+this.maxPlayers+" players).");
 	}
-	
-	setUpdatesPerSecond(ups) {
-		this.ups = ups;
+
+
+	tick(deltaTime: number) {
+		this.processGroups()
+		this.processQueues()
+
+		for (const player of Object.values(this.players)) {
+			player.tick(deltaTime)
+		}
+		for (const mob of Object.values(this.mobs)) {
+			mob.tick(deltaTime)
+
+			if (!mob.isAttacking()) {
+				for (const player of Object.values(this.players)) {
+					mob.checkAggro(player)
+					if (mob.isAttacking()) {
+						break
+					}
+				}
+			}
+
+		}
+
+		// this.player.onCheckAggro(() => {
+		// 	this.forEachMob((mob) => {
+		// 		if(mob.isAggressive && !mob.isAttacking() && this.player.isNear(mob, mob.aggroRange)) {
+		// 			this.player.aggro(mob);
+		// 		}
+		// 	});
+		// });
+
+		// this.player.onAggro((mob) => {
+		// 	if(!mob.isWaitingToAttack(this.player) && !this.player.isAttackedBy(mob)) {
+		// 		this.player.log_info("Aggroed by " + mob.id + " at ("+this.player.gridX+", "+this.player.gridY+")");
+		// 		connection.sendAggro(mob);
+		// 		mob.waitToAttack(this.player);
+		// 	}
+		// });
 	}
-	
+
+
 	onInit(callback) {
 		this.init_callback = callback;
 	}
 
+
 	onPlayerConnect(callback) {
 		this.connect_callback = callback;
 	}
-	
+
+
 	onPlayerAdded(callback) {
 		this.added_callback = callback;
 	}
-	
+
+
 	onPlayerRemoved(callback) {
 		this.removed_callback = callback;
 	}
-	
-	onRegenTick(callback) {
-		this.regen_callback = callback;
-	}
-	
+
+
 	pushRelevantEntityListTo(player) {
 		var entities;
 		
@@ -256,9 +267,9 @@ export default class World {
 	
 	pushToPlayer(player, message) {
 		if(player && player.id in this.outgoingQueues) {
-			this.outgoingQueues[player.id].push(message.serialize());
+			this.outgoingQueues[player.id].push(message.serialize())
 		} else {
-			log.error("pushToPlayer: player was undefined");
+			log.error("pushToPlayer: player was undefined")
 		}
 	}
 	
@@ -475,7 +486,7 @@ export default class World {
 			player.addAttacker(mob);
 			mob.setTarget(player);
 			
-			this.broadcastAttacker(mob);
+			// this.broadcastAttacker(mob);
 			log.debug(mob.id + " is now attacking " + player.id);
 		}
 	}
@@ -492,15 +503,29 @@ export default class World {
 		}
 	}
 
-	broadcastAttacker(character) {
-		if(character) {
-			const message = new Messages.Attack(character.id, character.target)
-			this.pushToAdjacentGroups(character.group, message, character.id)
-		}
-		if(this.attack_callback) {
-			this.attack_callback(character);
+	// broadcastAttacker(character) {
+	// 	if(character) {
+	// 		const message = new Messages.Attack(character.id, character.target)
+	// 		this.pushToAdjacentGroups(character.group, message, character.id)
+	// 	}
+	// 	if(this.attack_callback) {
+	// 		this.attack_callback(character);
+	// 	}
+	// }
+
+
+	onMobHitsPlayer(mob: Mob, player: Player) {
+		const dmg = Types.dmg(mob.getWeaponLevel(), null, player.getArmorLevel())
+		player.hitpoints -= dmg
+		this.handleHurtEntity(player, mob, dmg);
+		if(player.hitpoints <= 0) {
+			player.isDead = true;
+			if(player.firepotionTimeout) {
+				clearTimeout(player.firepotionTimeout);
+			}
 		}
 	}
+
 	
 	handleHurtEntity(entity, attacker, damage) {
 		var self = this;
@@ -559,7 +584,7 @@ export default class World {
 				self.addNpc(kind, pos.x + 1, pos.y);
 			}
 			if(Types.isMob(kind)) {
-				var mob = new Mob('7' + kind + count++, kind, pos.x + 1, pos.y);
+				var mob = new Mob(this, '7' + kind + count++, kind, pos.x + 1, pos.y);
 				mob.onRespawn(function() {
 					mob.isDead = false;
 					self.addMob(mob);
@@ -830,11 +855,10 @@ export default class World {
 	public id: any
 	public maxPlayers: any
 	public server: any
-	public ups: any
 	public map: any
 	public entities: any
-	public players: any
-	public mobs: any
+	public players: {[id: number]: Player}
+	public mobs: {[id: number]: Mob}
 	public attackers: any
 	public items: any
 	public equipping: any
@@ -848,7 +872,6 @@ export default class World {
 	public zoneGroupsReady: any
 	public removed_callback: any
 	public added_callback: any
-	public regen_callback: any
 	public init_callback: any
 	public connect_callback: any
 	public attack_callback: any

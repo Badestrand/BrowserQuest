@@ -27,7 +27,8 @@ const AllMobVariants: Array<MobVariantInfo> = [{
 		shadowOffsetY: -2,
 	},
 	behaviour: {
-		isAggressive: false,
+		// isAggressive: false,
+		isAggressive: true,
 		aggroRange: 1,
 	},
 }, {

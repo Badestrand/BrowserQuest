@@ -527,9 +527,9 @@ class Connection extends EventEmitter {
 		this.sendMessage([Messages.AGGRO, mob.id]);
 	}
 
-	sendAttack(mob) {
-		this.sendMessage([Messages.ATTACK, mob.id]);
-	}
+	// sendAttack(mob) {
+	// 	this.sendMessage([Messages.ATTACK, mob.id]);
+	// }
 
 	sendHit(mob) {
 		this.sendMessage([Messages.HIT, mob.id]);

@@ -10,8 +10,8 @@
 		"../shared/types.d.ts"
 	],
 	"include": [
-		"**/*.ts",
-		"../shared",
+		"js/*.ts",
+		"../shared/*.ts",
 		"../shared/types.d.ts"
 	],
 	"exclude": [

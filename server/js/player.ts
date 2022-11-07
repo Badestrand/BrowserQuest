@@ -180,32 +180,31 @@ export default class Player extends Character {
 					}
 				}
 			}
-			else if (action === Messages.AGGRO) {
-				if(this.move_callback) {
-					this.world.handleMobHate(message[1], this.id, 5);
-				}
-			}
-			else if (action === Messages.ATTACK) {
-				var mob = this.world.getEntityById(message[1]);
-				
-				if(mob) {
-					this.setTarget(mob);
-					this.world.broadcastAttacker(this);
-				}
-			}
+			// else if (action === Messages.AGGRO) {
+			// 	if(this.move_callback) {
+			// 		this.world.handleMobHate(message[1], this.id, 5);
+			// 	}
+			// }
+			// else if (action === Messages.ATTACK) {
+			// 	var mob = this.world.getEntityById(message[1]);
+			// 	if(mob) {
+			// 		this.setTarget(mob);
+			// 		this.world.broadcastAttacker(this);
+			// 	}
+			// }
 			else if (action === Messages.HIT) {
 				var mob = this.world.getEntityById(message[1]);
 
 				if(mob) {
 					const dmg = Types.dmg(this.weapon.variant.weaponLevel, this.getTotalAttrPoints('str'), mob.variant.armor)
 					if(dmg > 0) {
-						mob.receiveDamage(dmg, this.id);
+						mob.receiveDamage(this, dmg)
 						this.world.handleMobHate(mob.id, this.id, dmg);
 						this.world.handleHurtEntity(mob, this, dmg);
 					}
 				}
 			}
-			else if (action === Messages.HURT) {
+			/*else if (action === Messages.HURT) {
 				var mob = this.world.getEntityById(message[1]);
 				if(mob && this.hitpoints > 0) {
 					const dmg = Types.dmg(mob.variant.weapon, null, this.armor.variant.armorLevel);
@@ -218,7 +217,7 @@ export default class Player extends Character {
 						}
 					}
 				}
-			}
+			}*/
 			else if (action === Messages.LOOT) {
 				var item = this.world.getEntityById(message[1]);
 				
@@ -471,7 +470,8 @@ export default class Player extends Character {
 			
 			if(Types.isArmor(item.kind)) {
 				this.equipArmor(item.kind);
-			} else if(Types.isWeapon(item.kind)) {
+			}
+			else if(Types.isWeapon(item.kind)) {
 				this.equipWeapon(item.kind);
 			}
 		}
@@ -519,7 +519,9 @@ export default class Player extends Character {
 	}
 
 
-
+	getArmorLevel(): number {
+		return this.armor.variant.armorLevel
+	}
 
 
 
@@ -563,6 +565,11 @@ export default class Player extends Character {
 		const totalAvailablePoints = getLevelFromExperience(this.experience) * ATTR_POINTS_PER_LEVEL
 		const totalSpentPoints = this.spentAttrPoints['str'] + this.spentAttrPoints['dex'] + this.spentAttrPoints['vit'] + this.spentAttrPoints['ene']
 		return totalAvailablePoints - totalSpentPoints
+	}
+
+
+
+	tick(deltaTime: number) {
 	}
 
 

@@ -12,7 +12,7 @@ class FormatChecker {
         this.formats[Messages.MOVE] = ['n', 'n'],
         this.formats[Messages.LOOTMOVE] = ['n', 'n', 'n'],
         this.formats[Messages.AGGRO] = ['n'],
-        this.formats[Messages.ATTACK] = ['n'],
+        // this.formats[Messages.ATTACK] = ['n'],
         this.formats[Messages.HIT] = ['n'],
         this.formats[Messages.HURT] = ['n'],
         this.formats[Messages.CHAT] = ['s'],

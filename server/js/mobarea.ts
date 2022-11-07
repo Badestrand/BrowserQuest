@@ -2,6 +2,7 @@ import * as _ from 'underscore'
 
 import Area from './area'
 import Mob from './mob'
+import WorldServer from './worldserver'
 import * as Types from '../../shared/gametypes'
 import {Entities} from '../../shared/constants'
 import * as Utils from './utils'
@@ -20,17 +21,17 @@ export default class MobArea extends Area {
     }
 
 
-    spawnMobs() {
+    spawnMobs(world: WorldServer) {
         for(var i = 0; i < this.nb; i += 1) {
-            this.addToArea(this._createMobInsideArea());
+            this.addToArea(this._createMobInsideArea(world));
         }
     }
 
 
-    _createMobInsideArea() {
+    _createMobInsideArea(world: WorldServer) {
         var k = Types.getKindFromString(this.kind),
             pos = this._getRandomPositionInsideArea(),
-            mob = new Mob('1' + this.id + ''+ k + ''+ this.entities.length, k, pos.x, pos.y);
+            mob = new Mob(world, '1' + this.id + ''+ k + ''+ this.entities.length, k, pos.x, pos.y);
         
         mob.onMove(this.world.onMobMoveCallback.bind(this.world));
 
