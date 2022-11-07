@@ -28,8 +28,8 @@ export default class Renderer {
 		this.initFPS();
 		this.tilesize = 16;
 	
-		this.upscaledRendering = this.context.mozImageSmoothingEnabled !== undefined;
-		this.supportsSilhouettes = this.upscaledRendering;
+		this.upscaledRendering = false  //this.context.mozImageSmoothingEnabled !== undefined;
+		this.supportsSilhouettes = true
 	
 		this.rescale(this.getScaleFactor());
 	
@@ -87,9 +87,9 @@ export default class Renderer {
 	
 		this.createCamera();
 	
-		this.context.mozImageSmoothingEnabled = false;
-		this.background.mozImageSmoothingEnabled = false;
-		this.foreground.mozImageSmoothingEnabled = false;
+		this.context.imageSmoothingEnabled = false;
+		this.background.imageSmoothingEnabled = false;
+		this.foreground.imageSmoothingEnabled = false;
 	
 		this.initFont();
 		this.initFPS();

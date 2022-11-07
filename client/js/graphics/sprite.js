@@ -107,7 +107,7 @@ export default class Sprite {
 		ctx.drawImage(this.image, 0, 0, width, height);
 		data = ctx.getImageData(0, 0, width, height).data;
 		finalData = ctx.getImageData(0, 0, width, height);
-		fdata = finalData.data;
+		let fdata = finalData.data;
 	
 		var getIndex = function(x, y) {
 			return ((width * (y-1)) + x - 1) * 4;
@@ -156,8 +156,9 @@ export default class Sprite {
 			}
 		}
 
-		finalData.data = fdata;
-		ctx.putImageData(finalData, 0, 0);
+		// finalData.data = fdata;
+		const finalData2 = new ImageData(fdata, width, height)
+		ctx.putImageData(finalData2, 0, 0);
 	
 		this.silhouetteSprite = { 
 			image: canvas,

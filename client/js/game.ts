@@ -126,7 +126,7 @@ export default class Game {
 					this.initShadows();
 					this.initHurtSprites();
 
-					if(!this.renderer.mobile && !this.renderer.tablet && this.renderer.upscaledRendering) {
+					if(!this.renderer.mobile && !this.renderer.tablet) {
 						this.initSilhouettes();
 					}
 
@@ -1844,7 +1844,6 @@ export default class Game {
 	
 			if(this.hoveringMob || this.hoveringNpc || this.hoveringChest) {
 				var entity = this.getEntityAt(x, y);
-		
 				if(!entity.isHighlighted && this.renderer.supportsSilhouettes) {
 					if(this.lastHovered) {
 						this.lastHovered.setHighlight(false);
