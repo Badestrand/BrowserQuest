@@ -82,8 +82,6 @@ export default class World {
 	addPlayer(player) {
 		log.info(player.name + " has joined world "+ this.id)
 
-		this.pushRelevantEntityListTo(player);
-
 		var move_callback = (x, y) => {
 			log.debug(player.name + " is moving to (" + x + ", " + y + ").");
 			
@@ -139,6 +137,7 @@ export default class World {
 		this.addEntity(player)
 		this.players[player.id] = player
 		this.outgoingQueues[player.id] = []
+		this.pushRelevantEntityListTo(player)
 
 		// Number of players in this world and in the overall server world
 		this.updatePopulation();
